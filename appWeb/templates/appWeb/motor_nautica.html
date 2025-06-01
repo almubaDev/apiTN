@@ -1,0 +1,213 @@
+{% extends 'appWeb/base.html' %}
+{% load static %}
+
+{% block title %}El Motor Náutica - Tarotnaútica{% endblock %}
+
+{% block extra_css %}
+<style>
+    .cosmic-glow {
+        box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+    }
+    
+    .card-hover {
+        transition: all 0.3s ease;
+    }
+    
+    .card-hover:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 20px 40px rgba(139, 92, 246, 0.2);
+    }
+    
+    .pulse-glow {
+        animation: pulseGlow 2s ease-in-out infinite alternate;
+    }
+    
+    @keyframes pulseGlow {
+        from { box-shadow: 0 0 20px rgba(139, 92, 246, 0.4); }
+        to { box-shadow: 0 0 40px rgba(217, 70, 239, 0.6); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-cosmic-900 via-cosmic-800 to-primary-900/20">
+    <!-- Header -->
+    <section class="pt-24 pb-8">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 class="font-mystical text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-primary-400 to-gold-400 bg-clip-text text-transparent">
+                El Motor Náutica
+            </h1>
+            <div class="w-24 h-1 bg-gradient-to-r from-primary-500 to-gold-500 mx-auto mb-6"></div>
+            <p class="text-xl text-cosmic-300 leading-relaxed">
+                Descubre la tecnología mística que impulsa cada consulta en Tarotnaútica
+            </p>
+        </div>
+    </section>
+
+    <!-- Motor Náutica Section -->
+    <section class="py-20 bg-cosmic-800/50">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid lg:grid-cols-2 gap-12 items-center">
+                <!-- Contenido Textual -->
+                <div class="space-y-6">
+                    <div class="bg-cosmic-700/30 backdrop-blur-sm rounded-2xl p-8 border border-primary-500/20">
+                        <h3 class="font-mystical text-2xl font-semibold mb-4 text-primary-300">
+                            <i class="fas fa-cog mr-3 text-gold-400"></i>
+                            La Fuerza Impulsora
+                        </h3>
+                        <p class="text-cosmic-200 leading-relaxed mb-4">
+                            El Motor Náutica es la fuerza que impulsa cada tirada en Tarotnaútica. Funciona como un canal energético digital que interpreta la conexión entre tu intención, el universo y los símbolos del tarot.
+                        </p>
+                        <p class="text-cosmic-300 leading-relaxed">
+                            A través de tu dispositivo, tu energía emocional y tus preguntas se sincronizan con una sabiduría ancestral para conectarlos con <span class="text-gold-400 font-semibold">Meigas de la selva Amazónica</span> mediante el Motor Náutica.
+                        </p>
+                    </div>
+                    
+                    <div class="bg-cosmic-700/30 backdrop-blur-sm rounded-2xl p-8 border border-mystic-500/20">
+                        <h3 class="font-mystical text-2xl font-semibold mb-4 text-mystic-300">
+                            <i class="fas fa-sync-alt mr-3 text-primary-400"></i>
+                            Sincronización Única
+                        </h3>
+                        <p class="text-cosmic-200 leading-relaxed mb-4">
+                            Cada tirada se genera de forma única, utilizando elementos como tu fecha, hora de consulta, y el flujo vibracional de tu pregunta.
+                        </p>
+                        <p class="text-cosmic-300 leading-relaxed">
+                            Luego, el Motor Náutica traduce estos datos en una selección simbólica impulsada que responde a tu momento presente.
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Visualización del Motor -->
+                <div class="flex justify-center">
+                    <div class="relative">
+                        <!-- Círculo Principal -->
+                        <div class="w-80 h-80 bg-gradient-to-br from-primary-500/20 via-mystic-500/20 to-gold-500/20 rounded-full border-2 border-primary-500/30 flex items-center justify-center">
+                            <!-- Núcleo -->
+                            <div class="w-32 h-32 bg-gradient-to-br from-primary-600 to-mystic-600 rounded-full flex items-center justify-center pulse-glow">
+                                <i class="fas fa-atom text-4xl text-white"></i>
+                            </div>
+                            
+                            <!-- Elementos Orbitales -->
+                            <div class="absolute inset-0 animate-spin" style="animation-duration: 10s;">
+                                <div class="absolute top-4 left-1/2 transform -translate-x-1/2 w-6 h-6 bg-gold-400 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-star text-xs text-cosmic-900"></i>
+                                </div>
+                                <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 w-6 h-6 bg-primary-400 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-moon text-xs text-cosmic-900"></i>
+                                </div>
+                                <div class="absolute top-1/2 left-4 transform -translate-y-1/2 w-6 h-6 bg-mystic-400 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-eye text-xs text-cosmic-900"></i>
+                                </div>
+                                <div class="absolute top-1/2 right-4 transform -translate-y-1/2 w-6 h-6 bg-gold-500 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-leaf text-xs text-cosmic-900"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Partículas Flotantes -->
+                        <div class="absolute inset-0 pointer-events-none">
+                            <div class="absolute top-10 left-10 w-2 h-2 bg-primary-400 rounded-full animate-pulse"></div>
+                            <div class="absolute top-20 right-12 w-1 h-1 bg-gold-400 rounded-full animate-pulse" style="animation-delay: 1s;"></div>
+                            <div class="absolute bottom-16 left-16 w-1.5 h-1.5 bg-mystic-400 rounded-full animate-pulse" style="animation-delay: 2s;"></div>
+                            <div class="absolute bottom-8 right-8 w-2 h-2 bg-primary-300 rounded-full animate-pulse" style="animation-delay: 0.5s;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Mensaje Final -->
+            <div class="text-center mt-16">
+                <div class="bg-gradient-to-r from-cosmic-700/40 via-primary-900/20 to-cosmic-700/40 backdrop-blur-sm rounded-2xl p-8 border border-gold-500/20 max-w-4xl mx-auto">
+                    <blockquote class="font-mystical text-xl md:text-2xl italic text-gold-300 leading-relaxed">
+                        "Es más que código y algoritmos. Es una red simbólica intuitiva, donde la tecnología se vuelve ritual, y tu experiencia se transforma en revelación."
+                    </blockquote>
+                    <div class="mt-6 text-primary-300 font-semibold">
+                        <i class="fas fa-quote-left mr-2"></i>
+                        Tarotnaútica no te dice lo que pasará: te conecta con lo que ya vibra dentro de ti.
+                        <i class="fas fa-quote-right mr-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="py-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="font-mystical text-4xl font-bold mb-4 text-primary-300">
+                    Explora el Cosmos Interior
+                </h2>
+                <p class="text-xl text-cosmic-400 max-w-3xl mx-auto">
+                    Descubre las diferentes formas de conectar con tu sabiduría interior
+                </p>
+            </div>
+            
+            <div class="grid md:grid-cols-2 lg:grid-cols-2 gap-8">
+                <!-- Consulta Digital -->
+                <div class="bg-cosmic-700/30 backdrop-blur-sm rounded-2xl p-8 border border-primary-500/20 card-hover">
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-gradient-to-br from-primary-500 to-mystic-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <i class="fas fa-mobile-alt text-2xl text-white"></i>
+                        </div>
+                        <h3 class="font-mystical text-xl font-semibold mb-4 text-primary-300">Consulta Digital</h3>
+                        <p class="text-cosmic-300 leading-relaxed">
+                            Conecta con el Motor Náutica para recibir tiradas personalizadas impulsadas por tu energía única.
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Conexión Amazónica -->
+                <div class="bg-cosmic-700/30 backdrop-blur-sm rounded-2xl p-8 border border-mystic-500/20 card-hover">
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-gradient-to-br from-mystic-500 to-gold-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <i class="fas fa-leaf text-2xl text-white"></i>
+                        </div>
+                        <h3 class="font-mystical text-xl font-semibold mb-4 text-mystic-300">Sabiduría Ancestral</h3>
+                        <p class="text-cosmic-300 leading-relaxed">
+                            Canaliza la conexión con las Meigas amazónicas a través de tecnología que honra tradiciones milenarias.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Botón de Regreso -->
+            <div class="text-center mt-16">
+                <a href="{% url 'appWeb:home' %}" class="inline-flex items-center bg-gradient-to-r from-primary-500 to-mystic-500 hover:from-primary-600 hover:to-mystic-600 text-white px-8 py-4 rounded-full font-semibold text-lg transition-all duration-300 transform hover:scale-105">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Volver al Inicio
+                </a>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Efecto de partículas en movimiento
+    function createCosmicParticles() {
+        const particles = document.createElement('div');
+        particles.className = 'fixed inset-0 pointer-events-none z-0';
+        
+        for (let i = 0; i < 30; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'absolute bg-primary-400 rounded-full opacity-20';
+            particle.style.width = Math.random() * 4 + 2 + 'px';
+            particle.style.height = particle.style.width;
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.top = Math.random() * 100 + '%';
+            particle.style.animation = `float ${Math.random() * 10 + 5}s ease-in-out infinite`;
+            particle.style.animationDelay = Math.random() * 5 + 's';
+            particles.appendChild(particle);
+        }
+        
+        document.body.appendChild(particles);
+    }
+    
+    // Inicializar efectos
+    document.addEventListener('DOMContentLoaded', function() {
+        createCosmicParticles();
+    });
+</script>
+{% endblock %}

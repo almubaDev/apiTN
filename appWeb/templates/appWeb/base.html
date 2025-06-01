@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Tarotnaútica{% endblock %}</title>
+    
+    <!-- Tailwind CSS with Custom Colors -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        // Paleta basada en el logo
+                        primary: {
+                            50: '#f4f3ff',
+                            100: '#ebe9fe', 
+                            200: '#d9d6fe',
+                            300: '#bfb8fc',
+                            400: '#a192f8',
+                            500: '#8b5cf6', // Violeta principal del logo
+                            600: '#7c3aed',
+                            700: '#6d28d9',
+                            800: '#5b21b6',
+                            900: '#4c1d95',
+                        },
+                        mystic: {
+                            50: '#fdf4ff',
+                            100: '#fae8ff',
+                            200: '#f5d0fe',
+                            300: '#f0abfc',
+                            400: '#e879f9', // Rosa místico
+                            500: '#d946ef',
+                            600: '#c026d3',
+                            700: '#a21caf',
+                            800: '#86198f',
+                            900: '#701a75',
+                        },
+                        cosmic: {
+                            50: '#f8fafc',
+                            100: '#f1f5f9',
+                            200: '#e2e8f0',
+                            300: '#cbd5e1',
+                            400: '#94a3b8',
+                            500: '#64748b',
+                            600: '#475569',
+                            700: '#334155', // Gris cósmico
+                            800: '#1e293b',
+                            900: '#0f172a', // Negro cósmico del fondo
+                        },
+                        gold: {
+                            50: '#fffbeb',
+                            100: '#fef3c7',
+                            200: '#fde68a',
+                            300: '#fcd34d',
+                            400: '#fbbf24',
+                            500: '#f59e0b', // Dorado de las estrellas
+                            600: '#d97706',
+                            700: '#b45309',
+                            800: '#92400e',
+                            900: '#78350f',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        .font-mystical { font-family: 'Cinzel', serif; }
+        .font-body { font-family: 'Inter', sans-serif; }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="bg-cosmic-900 text-cosmic-100 font-body min-h-screen">
+    <!-- Navbar -->
+    {% include 'appWeb/partials/navbar.html' %}
+    
+    <!-- Messages -->
+    {% if messages %}
+        <div class="fixed top-20 right-4 z-50 space-y-2">
+            {% for message in messages %}
+                <div class="alert-{{ message.tags }} bg-cosmic-800 border-l-4 p-4 rounded-r-lg shadow-lg max-w-sm transform transition-all duration-500 ease-in-out"
+                     style="border-left-color: {% if message.tags == 'success' %}#10b981{% elif message.tags == 'error' %}#ef4444{% elif message.tags == 'warning' %}#f59e0b{% else %}#3b82f6{% endif %};">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            {% if message.tags == 'success' %}
+                                <i class="fas fa-check-circle text-green-400"></i>
+                            {% elif message.tags == 'error' %}
+                                <i class="fas fa-exclamation-circle text-red-400"></i>
+                            {% elif message.tags == 'warning' %}
+                                <i class="fas fa-exclamation-triangle text-gold-400"></i>
+                            {% else %}
+                                <i class="fas fa-info-circle text-blue-400"></i>
+                            {% endif %}
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-cosmic-100">{{ message }}</p>
+                        </div>
+                        <div class="ml-auto pl-3">
+                            <button onclick="this.parentElement.parentElement.parentElement.remove()" 
+                                    class="text-cosmic-400 hover:text-cosmic-200 transition-colors">
+                                <i class="fas fa-times text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <script>
+            // Auto-dismiss messages after 5 seconds
+            setTimeout(() => {
+                document.querySelectorAll('[class*="alert-"]').forEach(alert => {
+                    alert.style.transform = 'translateX(100%)';
+                    alert.style.opacity = '0';
+                    setTimeout(() => alert.remove(), 300);
+                });
+            }, 5000);
+        </script>
+    {% endif %}
+    
+    <!-- Main Content -->
+    <main class="pt-16">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Scripts -->
+    <script>
+        // Cosmic background animation
+        function createStars() {
+            const starsContainer = document.createElement('div');
+            starsContainer.className = 'fixed inset-0 pointer-events-none z-0';
+            starsContainer.innerHTML = Array.from({length: 50}, () => {
+                const star = document.createElement('div');
+                star.className = 'absolute bg-gold-400 rounded-full animate-pulse';
+                star.style.width = Math.random() * 3 + 1 + 'px';
+                star.style.height = star.style.width;
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                star.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                return star.outerHTML;
+            }).join('');
+            document.body.appendChild(starsContainer);
+        }
+        
+        // Initialize stars on load
+        document.addEventListener('DOMContentLoaded', createStars);
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
