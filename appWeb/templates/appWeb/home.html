@@ -47,8 +47,9 @@
                 <a href="{% url 'appWeb:motor_nautica' %}" 
                    class="inline-flex items-center px-8 py-4 border-2 border-primary-500 text-primary-400 font-semibold rounded-xl hover:bg-primary-500/10 transition-all duration-300">
                     <i class="fas fa-cog mr-3"></i>
-                    Descubrir el Motor
+                    Descubrir el Motor Náutica
                 </a>
+                
             {% else %}
                 <a href="{% url 'appWeb:motor_nautica' %}" 
                    class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-primary-500 to-mystic-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:shadow-primary-500/25 transition-all duration-300 transform hover:-translate-y-1">
@@ -67,25 +68,17 @@
         <!-- Stats -->
         <div class="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-8">
             <div class="text-center">
-                <div class="text-3xl font-bold text-primary-400 mb-2">1,000+</div>
+                <div class="text-3xl font-bold text-primary-400 mb-2">2,400+</div>
                 <div class="text-cosmic-300">Consultas exitosas durante nuestro lanzamiento privado</div>
             </div>
             <div class="text-center">
-                <div class="text-3xl font-bold text-mystic-400 mb-2">{% if sets %}{{ sets|length }}{% else %}12{% endif %}</div>
+                <div class="text-3xl font-bold text-mystic-400 mb-2">{{ total_mazos|default:"0" }}</div>
                 <div class="text-cosmic-300">Mazos Místicos</div>
             </div>
             <div class="text-center">
-                <div class="text-3xl font-bold text-gold-400 mb-2">100+</div>
+                <div class="text-3xl font-bold text-gold-400 mb-2">300+</div>
                 <div class="text-cosmic-300">Usuarios Satisfechos</div>
             </div>
-        </div>
-    </div>
-    
-    <!-- Scroll Down Indicator -->
-    <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-        <div class="flex flex-col items-center text-cosmic-400">
-            <span class="text-sm mb-2">Descubre más</span>
-            <i class="fas fa-chevron-down text-lg"></i>
         </div>
     </div>
 </section>
@@ -147,14 +140,9 @@
             <h2 class="font-mystical text-3xl sm:text-4xl font-bold text-cosmic-100 mb-4">
                 Explora Nuestros Mazos Místicos
             </h2>
-            <p class="text-lg text-cosmic-300 max-w-2xl mx-auto mb-8">
+            <p class="text-lg text-cosmic-300 max-w-2xl mx-auto">
                 Cada mazo ha sido cuidadosamente seleccionado para ofrecerte diferentes perspectivas del universo
             </p>
-            <a href="{% url 'appWeb:sets_list' %}" 
-               class="inline-flex items-center text-primary-400 hover:text-primary-300 font-semibold transition-colors">
-                Ver todos los mazos
-                <i class="fas fa-arrow-right ml-2"></i>
-            </a>
         </div>
         
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">

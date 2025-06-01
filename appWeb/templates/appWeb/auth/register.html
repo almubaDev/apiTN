@@ -1,0 +1,448 @@
+{% extends 'appWeb/base.html' %}
+{% load static %}
+
+{% block title %}Registrarse - Tarotnaútica{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-cosmic-900 via-primary-900/30 to-mystic-900/30 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+        <!-- Logo y Header -->
+        <div class="text-center">
+            <div class="mx-auto h-16 w-16 flex items-center justify-center rounded-full bg-gradient-to-br from-primary-500 to-mystic-500 mb-6">
+                <img src="{% static 'img/logo.png' %}" alt="Tarotnaútica" class="h-12 w-12 object-contain">
+            </div>
+            <h2 class="font-mystical text-3xl font-bold text-cosmic-100 mb-2">
+                Inicia tu Viaje Cósmico
+            </h2>
+            <p class="text-cosmic-300">
+                Únete a la comunidad de exploradores místicos
+            </p>
+        </div>
+
+        <!-- Formulario -->
+        <div class="bg-cosmic-800/50 backdrop-blur-sm rounded-2xl p-8 border border-cosmic-600 shadow-xl">
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+                
+                <!-- Nombre Field -->
+                <div class="space-y-2">
+                    <label for="{{ form.nombre.id_for_label }}" class="block text-sm font-medium text-cosmic-200">
+                        <i class="fas fa-user mr-2 text-primary-400"></i>
+                        Nombre Místico
+                    </label>
+                    {{ form.nombre }}
+                    {% if form.nombre.errors %}
+                        <div class="text-red-400 text-sm mt-1">
+                            {% for error in form.nombre.errors %}
+                                <p><i class="fas fa-exclamation-circle mr-1"></i>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Email Field -->
+                <div class="space-y-2">
+                    <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-cosmic-200">
+                        <i class="fas fa-envelope mr-2 text-primary-400"></i>
+                        Email Cósmico
+                    </label>
+                    {{ form.email }}
+                    {% if form.email.errors %}
+                        <div class="text-red-400 text-sm mt-1">
+                            {% for error in form.email.errors %}
+                                <p><i class="fas fa-exclamation-circle mr-1"></i>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Password Field -->
+                <div class="space-y-2">
+                    <label for="{{ form.password1.id_for_label }}" class="block text-sm font-medium text-cosmic-200">
+                        <i class="fas fa-lock mr-2 text-primary-400"></i>
+                        Clave Secreta
+                    </label>
+                    {{ form.password1 }}
+                    {% if form.password1.errors %}
+                        <div class="text-red-400 text-sm mt-1">
+                            {% for error in form.password1.errors %}
+                                <p><i class="fas fa-exclamation-circle mr-1"></i>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <div class="text-xs text-cosmic-400 mt-1">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Mínimo 8 caracteres para proteger tu energía
+                    </div>
+                </div>
+
+                <!-- Password Confirm Field -->
+                <div class="space-y-2">
+                    <label for="{{ form.password2.id_for_label }}" class="block text-sm font-medium text-cosmic-200">
+                        <i class="fas fa-shield-alt mr-2 text-primary-400"></i>
+                        Confirmar Clave
+                    </label>
+                    {{ form.password2 }}
+                    {% if form.password2.errors %}
+                        <div class="text-red-400 text-sm mt-1">
+                            {% for error in form.password2.errors %}
+                                <p><i class="fas fa-exclamation-circle mr-1"></i>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Terms and Conditions -->
+                <div class="space-y-2">
+                    <div class="flex items-start">
+                        {{ form.acepta_terminos }}
+                        <label for="{{ form.acepta_terminos.id_for_label }}" class="ml-2 text-sm text-cosmic-300 leading-5">
+                            Acepto los 
+                            <a href="#" onclick="openModal('termsModal')" class="text-primary-400 hover:text-primary-300 transition-colors">términos y condiciones</a> 
+                            y 
+                            <a href="#" onclick="openModal('privacyModal')" class="text-primary-400 hover:text-primary-300 transition-colors">política de privacidad</a>
+                            de Tarotnaútica
+                        </label>
+                    </div>
+                    {% if form.acepta_terminos.errors %}
+                        <div class="text-red-400 text-sm">
+                            {% for error in form.acepta_terminos.errors %}
+                                <p><i class="fas fa-exclamation-circle mr-1"></i>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" 
+                        class="group relative w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-white bg-gradient-to-r from-primary-500 to-mystic-500 hover:from-primary-600 hover:to-mystic-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
+                    <span class="absolute left-0 inset-y-0 flex items-center pl-3">
+                        <i class="fas fa-rocket text-primary-200 group-hover:text-white transition-colors"></i>
+                    </span>
+                    <span class="font-semibold">Comenzar Exploración Cósmica</span>
+                </button>
+            </form>
+
+            <!-- Divider -->
+            <div class="my-8">
+                <div class="relative">
+                    <div class="absolute inset-0 flex items-center">
+                        <div class="w-full border-t border-cosmic-600"></div>
+                    </div>
+                    <div class="relative flex justify-center text-sm">
+                        <span class="px-2 bg-cosmic-800 text-cosmic-400">o</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Login Link -->
+            <div class="text-center">
+                <p class="text-cosmic-300">
+                    ¿Ya tienes una cuenta cósmica? 
+                    <a href="{% url 'appWeb:login' %}" 
+                       class="font-medium text-primary-400 hover:text-primary-300 transition-colors">
+                        Inicia sesión aquí
+                    </a>
+                </p>
+            </div>
+        </div>
+
+        <!-- Welcome Benefits -->
+        <div class="bg-cosmic-800/30 backdrop-blur-sm rounded-xl p-6 border border-cosmic-700">
+            <h3 class="font-mystical text-lg font-semibold text-cosmic-100 mb-4 text-center">
+                <i class="fas fa-gift mr-2 text-gold-400"></i>
+                Bienvenida Cósmica
+            </h3>
+            <div class="space-y-3 text-sm text-cosmic-300">
+                <div class="flex items-center">
+                    <div class="w-2 h-2 bg-primary-400 rounded-full mr-3"></div>
+                    <span>3 créditos de bienvenida para tus primeras consultas</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-2 h-2 bg-mystic-400 rounded-full mr-3"></div>
+                    <span>Acceso a todos los mazos místicos</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-2 h-2 bg-gold-400 rounded-full mr-3"></div>
+                    <span>Historial completo de tus consultas</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Security Info -->
+        <div class="text-center">
+            <p class="text-cosmic-400 text-sm">
+                <i class="fas fa-shield-alt mr-1"></i>
+                Tu información personal está protegida por cifrado cósmico
+            </p>
+        </div>
+    </div>
+
+    <!-- Floating Cosmic Elements -->
+    <div class="fixed inset-0 pointer-events-none z-0">
+        <div class="absolute top-1/4 left-1/4 w-2 h-2 bg-gold-400 rounded-full animate-pulse opacity-60"></div>
+        <div class="absolute top-1/3 right-1/3 w-1 h-1 bg-primary-400 rounded-full animate-ping"></div>
+        <div class="absolute bottom-1/4 left-1/3 w-3 h-3 bg-mystic-400 rounded-full animate-pulse opacity-40"></div>
+        <div class="absolute top-2/3 right-1/4 w-2 h-2 bg-gold-300 rounded-full animate-ping opacity-50"></div>
+        <div class="absolute bottom-1/3 right-1/2 w-1 h-1 bg-primary-300 rounded-full animate-pulse opacity-70"></div>
+    </div>
+</div>
+
+<!-- Modal de Términos y Condiciones -->
+<div id="termsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-cosmic-800 rounded-2xl border border-cosmic-600 max-w-4xl w-full max-h-[90vh] overflow-hidden">
+        <!-- Header -->
+        <div class="flex items-center justify-between p-6 border-b border-cosmic-600">
+            <h3 class="font-mystical text-2xl font-bold text-cosmic-100">
+                <i class="fas fa-scroll mr-3 text-primary-400"></i>
+                Términos y Condiciones
+            </h3>
+            <button onclick="closeModal('termsModal')" class="text-cosmic-400 hover:text-cosmic-200 transition-colors">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <!-- Content -->
+        <div class="p-6 overflow-y-auto max-h-[70vh]">
+            <div class="space-y-6 text-cosmic-300 text-sm leading-relaxed">
+                <div>
+                    <h4 class="font-semibold text-primary-300 mb-3">1. Aceptación de los Términos</h4>
+                    <p>Al acceder y utilizar Tarotnaútica, aceptas estar legalmente vinculado por estos términos y condiciones. Si no estás de acuerdo con alguna parte de estos términos, no debes usar nuestros servicios.</p>
+                </div>
+
+                <div>
+                    <h4 class="font-semibold text-primary-300 mb-3">2. Descripción del Servicio</h4>
+                    <p>Tarotnaútica es una plataforma digital que ofrece consultas de tarot automatizadas mediante inteligencia artificial. Nuestros servicios incluyen:</p>
+                    <ul class="list-disc ml-6 mt-2 space-y-1">
+                        <li>Lectura de cartas de tarot generadas por el Motor Náutica</li>
+                        <li>Interpretaciones místicas personalizadas</li>
+                        <li>Historial de consultas privado</li>
+                        <li>Acceso a múltiples mazos y tiradas</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="font-semibold text-primary-300 mb-3">3. Naturaleza del Servicio</h4>
+                    <p class="text-gold-300 font-medium mb-2">IMPORTANTE:</p>
+                    <p>Las consultas de tarot son para fines de entretenimiento, reflexión personal y orientación espiritual. No constituyen asesoramiento médico, legal, financiero o profesional. No debes tomar decisiones importantes basándote únicamente en nuestras interpretaciones.</p>
+                </div>
+
+                <div>
+                    <h4 class="font-semibold text-primary-300 mb-3">4. Uso del Sistema de Créditos</h4>
+                    <ul class="list-disc ml-6 space-y-1">
+                        <li>Los créditos son necesarios para realizar consultas</li>
+                        <li>Los créditos no son reembolsables una vez adquiridos</li>
+                        <li>Los créditos no tienen fecha de expiración</li>
+                        <li>No se pueden transferir créditos entre cuentas</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="font-semibold text-primary-300 mb-3">5. Cuenta de Usuario</h4>
+                    <p>Eres responsable de mantener la confidencialidad de tu cuenta y contraseña. Notifícanos inmediatamente sobre cualquier uso no autorizado de tu cuenta.</p>
+                </div>
+
+                <div>
+                    <h4 class="font-semibold text-primary-300 mb-3">6. Propiedad Intelectual</h4>
+                    <p>Todo el contenido, diseño, textos, imágenes y software de Tarotnaútica están protegidos por derechos de autor y otras leyes de propiedad intelectual.</p>
+                </div>
+
+                <div>
+                    <h4 class="font-semibold text-primary-300 mb-3">7. Limitación de Responsabilidad</h4>
+                    <p>Tarotnaútica no será responsable de ningún daño directo, indirecto, incidental o consecuente que resulte del uso de nuestros servicios.</p>
+                </div>
+
+                <div>
+                    <h4 class="font-semibold text-primary-300 mb-3">8. Modificaciones</h4>
+                    <p>Nos reservamos el derecho de modificar estos términos en cualquier momento. Los cambios entrarán en vigor inmediatamente después de su publicación.</p>
+                </div>
+
+                <div class="bg-cosmic-700/50 rounded-lg p-4 border border-primary-500/20">
+                    <p class="text-xs text-cosmic-400">
+                        <strong>Última actualización:</strong> Junio 2025<br>
+                        <strong>Contacto:</strong> Para preguntas sobre estos términos, contáctanos en legal@tarotnautica.com
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="p-6 border-t border-cosmic-600 text-center">
+            <button onclick="closeModal('termsModal')" 
+                    class="bg-gradient-to-r from-primary-500 to-mystic-500 hover:from-primary-600 hover:to-mystic-600 text-white px-6 py-2 rounded-lg font-medium transition-all duration-300">
+                Entendido
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Política de Privacidad -->
+<div id="privacyModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-cosmic-800 rounded-2xl border border-cosmic-600 max-w-4xl w-full max-h-[90vh] overflow-hidden">
+        <!-- Header -->
+        <div class="flex items-center justify-between p-6 border-b border-cosmic-600">
+            <h3 class="font-mystical text-2xl font-bold text-cosmic-100">
+                <i class="fas fa-shield-alt mr-3 text-mystic-400"></i>
+                Política de Privacidad
+            </h3>
+            <button onclick="closeModal('privacyModal')" class="text-cosmic-400 hover:text-cosmic-200 transition-colors">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <!-- Content -->
+        <div class="p-6 overflow-y-auto max-h-[70vh]">
+            <div class="space-y-6 text-cosmic-300 text-sm leading-relaxed">
+                <div>
+                    <h4 class="font-semibold text-mystic-300 mb-3">1. Información que Recopilamos</h4>
+                    <div class="space-y-2">
+                        <p><strong>Información de Cuenta:</strong></p>
+                        <ul class="list-disc ml-6 space-y-1">
+                            <li>Nombre y dirección de email</li>
+                            <li>Fecha de nacimiento (opcional)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="font-semibold text-mystic-300 mb-3">2. Cómo Usamos tu Información</h4>
+                    <ul class="list-disc ml-6 space-y-1">
+                        <li>Proporcionar y mejorar nuestros servicios de tarot</li>
+                        <li>Personalizar tu experiencia en la plataforma</li>
+                        <li>Procesar pagos y gestionar tu cuenta</li>
+                        <li>Enviar notificaciones importantes sobre el servicio</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="font-semibold text-mystic-300 mb-3">3. Privacidad de las Consultas</h4>
+                    <div class="bg-mystic-900/20 border border-mystic-500/30 rounded-lg p-4">
+                        <p class="text-mystic-200 font-medium mb-2">🔒 Confidencialidad Total</p>
+                        <p>Tus preguntas y consultas de tarot son completamente privadas. Solo tú puedes ver tus consultas y resultados. Nunca compartimos el contenido específico de tus lecturas con terceros.</p>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="font-semibold text-mystic-300 mb-3">4. Cookies y Tecnologías Similares</h4>
+                    <p>Utilizamos cookies para:</p>
+                    <ul class="list-disc ml-6 mt-2 space-y-1">
+                        <li>Mantener tu sesión iniciada</li>
+                        <li>Recordar tus preferencias</li>
+                        <li>Analizar el uso de la plataforma</li>
+                        <li>Mejorar la funcionalidad del sitio</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="font-semibold text-mystic-300 mb-3">5. Compartir Información</h4>
+                    <p>NO vendemos, alquilamos o compartimos tu información personal con terceros, excepto:</p>
+                    <ul class="list-disc ml-6 mt-2 space-y-1">
+                        <li>Cuando sea requerido por ley</li>
+                        <li>Para proteger nuestros derechos legales</li>
+                        <li>Con proveedores de servicios que nos ayudan a operar la plataforma (bajo estrictos acuerdos de confidencialidad)</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="font-semibold text-mystic-300 mb-3">6. Seguridad de Datos</h4>
+                    <p>Implementamos medidas de seguridad técnicas y organizativas para proteger tu información:</p>
+                    <ul class="list-disc ml-6 mt-2 space-y-1">
+                        <li>Cifrado de datos en tránsito y almacenamiento</li>
+                        <li>Acceso restringido a información personal</li>
+                        <li>Monitoreo regular de seguridad</li>
+                        <li>Copias de seguridad seguras</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="font-semibold text-mystic-300 mb-3">7. Tus Derechos</h4>
+                    <p>Tienes derecho a:</p>
+                    <ul class="list-disc ml-6 mt-2 space-y-1">
+                        <li>Acceder a tu información personal</li>
+                        <li>Corregir datos inexactos</li>
+                        <li>Solicitar la eliminación de tu cuenta</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="font-semibold text-mystic-300 mb-3">8. Retención de Datos</h4>
+                    <p>Mantenemos tu información mientras tengas una cuenta activa. Si eliminas tu cuenta, conservaremos algunos datos por razones legales y de seguridad durante un período mínimo requerido por ley.</p>
+                </div>
+
+                <div class="bg-cosmic-700/50 rounded-lg p-4 border border-mystic-500/20">
+                    <p class="text-xs text-cosmic-400">
+                        <strong>Última actualización:</strong> Junio 2025<br>
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="p-6 border-t border-cosmic-600 text-center">
+            <button onclick="closeModal('privacyModal')" 
+                    class="bg-gradient-to-r from-mystic-500 to-primary-500 hover:from-mystic-600 hover:to-primary-600 text-white px-6 py-2 rounded-lg font-medium transition-all duration-300">
+                Entendido
+            </button>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+// Validación en tiempo real de confirmación de contraseña
+document.addEventListener('DOMContentLoaded', function() {
+    const password1 = document.querySelector('#{{ form.password1.id_for_label }}');
+    const password2 = document.querySelector('#{{ form.password2.id_for_label }}');
+    
+    if (password1 && password2) {
+        password2.addEventListener('input', function() {
+            if (password1.value && password2.value) {
+                if (password1.value === password2.value) {
+                    password2.classList.remove('border-red-500');
+                    password2.classList.add('border-green-500');
+                } else {
+                    password2.classList.remove('border-green-500');
+                    password2.classList.add('border-red-500');
+                }
+            }
+        });
+    }
+});
+
+// Modal functions
+function openModal(modalId) {
+    document.getElementById(modalId).classList.remove('hidden');
+    document.body.classList.add('overflow-hidden');
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.add('hidden');
+    document.body.classList.remove('overflow-hidden');
+}
+
+// Close modal when clicking outside
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('bg-black')) {
+        const modals = ['termsModal', 'privacyModal'];
+        modals.forEach(modalId => {
+            if (!document.getElementById(modalId).classList.contains('hidden')) {
+                closeModal(modalId);
+            }
+        });
+    }
+});
+
+// Close modal with ESC key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const modals = ['termsModal', 'privacyModal'];
+        modals.forEach(modalId => {
+            if (!document.getElementById(modalId).classList.contains('hidden')) {
+                closeModal(modalId);
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}

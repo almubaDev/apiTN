@@ -1,0 +1,618 @@
+{% extends 'appWeb/base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }} - Tarotnaútica{% endblock %}
+
+{% block content %}
+<!-- CSRF Token para JavaScript -->
+{% csrf_token %}
+
+<div class="min-h-screen bg-gradient-to-br from-cosmic-900 via-cosmic-800 to-primary-900/20 py-20 px-4">
+    <div class="w-full max-w-sm mx-auto lg:max-w-6xl lg:grid lg:grid-cols-3 lg:gap-8 space-y-6 lg:space-y-0">
+        
+        <!-- Header -->
+        <div class="text-center mb-8 lg:col-span-3">
+            <div class="w-16 h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-primary-500 to-mystic-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                {% if user.profile.avatar %}
+                    <img src="{{ user.profile.avatar.url }}" alt="Avatar" class="w-full h-full object-cover rounded-full">
+                {% else %}
+                    <span class="text-white text-xl lg:text-2xl font-bold">{{ user.nombre|first|upper }}</span>
+                {% endif %}
+            </div>
+            <h1 class="font-mystical text-2xl lg:text-4xl font-bold text-cosmic-100 mb-2">
+                {{ user.nombre }}
+            </h1>
+            <p class="text-cosmic-400 text-sm lg:text-base">{{ user.email }}</p>
+        </div>
+
+        <!-- Contenido Principal -->
+        <div class="lg:col-span-2 space-y-6">
+            
+            <!-- Información Personal -->
+            <div class="bg-cosmic-800/80 backdrop-blur-sm rounded-xl border border-cosmic-600">
+                <div class="p-4 lg:p-6 border-b border-cosmic-700">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-mystical text-lg lg:text-xl font-semibold text-cosmic-100">
+                            <i class="fas fa-id-card mr-2 text-primary-400"></i>
+                            Información Personal
+                        </h3>
+                        <a href="{% url 'appWeb:editar_perfil' %}" 
+                           class="flex items-center space-x-2 bg-primary-500/10 text-primary-400 hover:text-primary-300 hover:bg-primary-500/20 px-4 py-2 rounded-lg transition-colors">
+                            <i class="fas fa-edit"></i>
+                            <span class="hidden sm:inline">Editar</span>
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="p-4 lg:p-6 space-y-6">
+                    
+                    <!-- Nombre -->
+                    <div class="flex items-center justify-between py-3 border-b border-cosmic-700/50">
+                        <div class="flex items-center">
+                            <i class="fas fa-user text-primary-400 mr-3 w-5"></i>
+                            <span class="text-cosmic-300 text-sm">Nombre</span>
+                        </div>
+                        <div class="text-cosmic-100 font-medium">{{ user.nombre }}</div>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="flex items-center justify-between py-3 border-b border-cosmic-700/50">
+                        <div class="flex items-center">
+                            <i class="fas fa-envelope text-primary-400 mr-3 w-5"></i>
+                            <span class="text-cosmic-300 text-sm">Email</span>
+                        </div>
+                        <div class="text-cosmic-100 font-medium">{{ user.email }}</div>
+                    </div>
+
+                    <!-- Fecha de Nacimiento -->
+                    <div class="flex items-center justify-between py-3 border-b border-cosmic-700/50">
+                        <div class="flex items-center">
+                            <i class="fas fa-birthday-cake text-primary-400 mr-3 w-5"></i>
+                            <span class="text-cosmic-300 text-sm">Fecha de Nacimiento</span>
+                        </div>
+                        <div class="text-cosmic-100 font-medium">
+                            {% if user.profile.fecha_nacimiento %}
+                                {{ user.profile.fecha_nacimiento|date:"d/m/Y" }}
+                            {% else %}
+                                <span class="text-cosmic-400 italic">No especificado</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Biografía -->
+                    <div class="py-3">
+                        <div class="flex items-center mb-3">
+                            <i class="fas fa-scroll text-primary-400 mr-3 w-5"></i>
+                            <span class="text-cosmic-300 text-sm">Historia Mística</span>
+                        </div>
+                        <div class="bg-cosmic-900/50 rounded-lg p-4 min-h-[80px] border border-cosmic-600">
+                            {% if user.profile.biografia %}
+                                <p class="text-cosmic-100 whitespace-pre-wrap">{{ user.profile.biografia }}</p>
+                            {% else %}
+                                <p class="text-cosmic-400 italic">Aún no has compartido tu historia mística...</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seguridad -->
+            <div class="bg-cosmic-800/80 backdrop-blur-sm rounded-xl p-4 lg:p-6 border border-cosmic-600">
+                <h3 class="font-mystical text-lg font-semibold text-cosmic-100 mb-4">
+                    <i class="fas fa-shield-alt mr-2 text-gold-400"></i>
+                    Seguridad de Cuenta
+                </h3>
+                
+                <div class="space-y-3">
+                    <button onclick="openPasswordModal()" 
+                            class="w-full flex items-center justify-between p-4 bg-cosmic-700/30 rounded-lg border border-cosmic-600 hover:border-gold-500/50 transition-colors">
+                        <div class="flex items-center">
+                            <i class="fas fa-key text-gold-400 mr-3"></i>
+                            <div class="text-left">
+                                <p class="font-medium text-cosmic-100 text-sm">Cambiar Contraseña</p>
+                                <p class="text-xs text-cosmic-400">Actualiza tu clave secreta</p>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-right text-cosmic-400"></i>
+                    </button>
+
+                    <div class="flex items-center justify-between p-4 bg-cosmic-700/30 rounded-lg border border-cosmic-600">
+                        <div class="flex items-center">
+                            <i class="fas fa-clock text-mystic-400 mr-3"></i>
+                            <div class="text-left">
+                                <p class="font-medium text-cosmic-100 text-sm">Último Acceso</p>
+                                <p class="text-xs text-cosmic-400">
+                                    {% if user.last_login %}
+                                        {{ user.last_login|date:"d/m/Y H:i" }}
+                                    {% else %}
+                                        Primera vez
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="text-green-400">
+                            <i class="fas fa-circle text-xs mr-1"></i>
+                            <span class="text-xs">Activo</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="space-y-6">
+            
+            <!-- Créditos -->
+            {% if wallet %}
+            <div class="bg-cosmic-800/80 backdrop-blur-sm rounded-xl p-4 lg:p-6 border border-cosmic-600">
+                <div class="text-center mb-4">
+                    <h3 class="font-mystical text-lg font-semibold text-cosmic-100 mb-2">
+                        <i class="fas fa-wallet mr-2 text-gold-400"></i>
+                        Billetera Cósmica
+                    </h3>
+                    <div class="text-3xl font-bold text-gold-400 mb-1">{{ wallet.creditos_disponibles }}</div>
+                    <div class="text-cosmic-300 text-sm">Créditos Disponibles</div>
+                </div>
+                
+                <a href="{% url 'appWeb:comprar_creditos' %}" 
+                   class="block w-full bg-gradient-to-r from-gold-500 to-primary-500 hover:from-gold-600 hover:to-primary-600 text-white text-center py-3 rounded-lg font-medium transition-all duration-300">
+                    <i class="fas fa-plus mr-2"></i>Obtener Más
+                </a>
+            </div>
+            {% endif %}
+
+            <!-- Estadísticas -->
+            {% if estadisticas %}
+            <div class="bg-cosmic-800/80 backdrop-blur-sm rounded-xl p-4 lg:p-6 border border-cosmic-600">
+                <h3 class="font-mystical text-lg font-semibold text-cosmic-100 mb-4">
+                    <i class="fas fa-chart-line mr-2 text-primary-400"></i>
+                    Tu Viaje Místico
+                </h3>
+                
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-cosmic-300 text-sm">Consultas Realizadas</span>
+                        <span class="text-primary-400 font-semibold text-lg">{{ estadisticas.total_consultas }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-cosmic-300 text-sm">Créditos Usados</span>
+                        <span class="text-mystic-400 font-semibold text-lg">{{ estadisticas.creditos_gastados_total }}</span>
+                    </div>
+                    {% if estadisticas.suscripcion_activa %}
+                    <div class="flex justify-between items-center">
+                        <span class="text-cosmic-300 text-sm">Tiradas Disponibles</span>
+                        <span class="text-green-400 font-semibold text-lg">{{ estadisticas.tiradas_disponibles_suscripcion }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <a href="{% url 'appWeb:historial_consultas' %}" 
+                   class="block w-full mt-4 border-2 border-primary-500 text-primary-400 hover:text-primary-300 hover:border-primary-400 text-center py-2 rounded-lg font-medium transition-colors">
+                    <i class="fas fa-history mr-2"></i>Ver Historial Completo
+                </a>
+            </div>
+            {% endif %}
+
+            <!-- Información de Cuenta -->
+            <div class="bg-cosmic-800/80 backdrop-blur-sm rounded-xl p-4 lg:p-6 border border-cosmic-600">
+                <h3 class="font-mystical text-lg font-semibold text-cosmic-100 mb-4">
+                    <i class="fas fa-info-circle mr-2 text-mystic-400"></i>
+                    Información de Cuenta
+                </h3>
+                
+                <div class="space-y-3 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-cosmic-400">Miembro desde</span>
+                        <span class="text-cosmic-200 font-medium">{{ user.date_joined|date:"M Y" }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-cosmic-400">Tipo de cuenta</span>
+                        <span class="text-cosmic-200 font-medium">
+                            {% if estadisticas.suscripcion_activa %}
+                                <span class="text-gold-400">Premium</span>
+                            {% else %}
+                                Básica
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-cosmic-400">Estado</span>
+                        <span class="text-green-400 font-medium">
+                            <i class="fas fa-circle text-xs mr-1"></i>Activo
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Éxito -->
+<div id="successModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-cosmic-800 rounded-2xl border border-green-500/30 max-w-md w-full">
+        <!-- Header -->
+        <div class="p-6 text-center">
+            <div class="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-check text-3xl text-green-400"></i>
+            </div>
+            <h3 class="font-mystical text-xl font-bold text-cosmic-100 mb-2">
+                ¡Contraseña Actualizada!
+            </h3>
+            <p class="text-cosmic-300 text-sm leading-relaxed">
+                Tu contraseña ha sido cambiada exitosamente. Por seguridad, debes iniciar sesión nuevamente con tu nueva contraseña.
+            </p>
+        </div>
+        
+        <!-- Footer -->
+        <div class="p-6 border-t border-cosmic-600">
+            <button onclick="redirectToLogin()" 
+                    class="w-full bg-gradient-to-r from-green-500 to-primary-500 hover:from-green-600 hover:to-primary-600 text-white py-3 rounded-lg font-medium transition-all duration-300">
+                <i class="fas fa-sign-in-alt mr-2"></i>Ir a Iniciar Sesión
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Cambio de Contraseña -->
+<div id="passwordModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-cosmic-800 rounded-2xl border border-cosmic-600 max-w-md w-full">
+        <!-- Header -->
+        <div class="flex items-center justify-between p-6 border-b border-cosmic-600">
+            <h3 class="font-mystical text-xl font-bold text-cosmic-100">
+                <i class="fas fa-key mr-3 text-gold-400"></i>
+                Cambiar Contraseña
+            </h3>
+            <button onclick="closePasswordModal()" class="text-cosmic-400 hover:text-cosmic-200 transition-colors">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <!-- Content -->
+        <div class="p-6">
+            <form id="passwordForm" class="space-y-4">
+                <div id="passwordError" class="hidden bg-red-900/20 border border-red-500/30 rounded-lg p-3">
+                    <div class="flex items-center text-red-400 text-sm">
+                        <i class="fas fa-exclamation-circle mr-2"></i>
+                        <span id="passwordErrorText"></span>
+                    </div>
+                </div>
+
+                <!-- Contraseña Actual -->
+                <div>
+                    <label for="currentPassword" class="block text-sm font-medium text-cosmic-200 mb-2">
+                        <i class="fas fa-lock mr-2 text-gold-400"></i>
+                        Contraseña Actual
+                    </label>
+                    <div class="relative">
+                        <input type="password" 
+                               id="currentPassword" 
+                               name="old_password"
+                               required
+                               class="w-full px-4 py-3 bg-cosmic-900 border border-cosmic-600 rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent text-cosmic-100 pr-12"
+                               placeholder="Tu contraseña actual">
+                        <button type="button" onclick="togglePasswordVisibility('currentPassword', 'toggleCurrent')" 
+                                class="absolute right-3 top-1/2 transform -translate-y-1/2 text-cosmic-400 hover:text-cosmic-200">
+                            <i id="toggleCurrent" class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Nueva Contraseña -->
+                <div>
+                    <label for="newPassword" class="block text-sm font-medium text-cosmic-200 mb-2">
+                        <i class="fas fa-key mr-2 text-gold-400"></i>
+                        Nueva Contraseña
+                    </label>
+                    <div class="relative">
+                        <input type="password" 
+                               id="newPassword" 
+                               name="new_password"
+                               required
+                               minlength="8"
+                               class="w-full px-4 py-3 bg-cosmic-900 border border-cosmic-600 rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent text-cosmic-100 pr-12"
+                               placeholder="Nueva contraseña segura">
+                        <button type="button" onclick="togglePasswordVisibility('newPassword', 'toggleNew')" 
+                                class="absolute right-3 top-1/2 transform -translate-y-1/2 text-cosmic-400 hover:text-cosmic-200">
+                            <i id="toggleNew" class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Indicador de fuerza -->
+                    <div id="passwordStrength" class="mt-2">
+                        <div class="flex items-center space-x-2">
+                            <div class="flex-1 bg-cosmic-700 rounded-full h-2">
+                                <div id="strengthBar" class="h-2 rounded-full transition-all duration-300" style="width: 0%;"></div>
+                            </div>
+                            <span id="strengthText" class="text-xs text-cosmic-400">Muy débil</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Confirmar Nueva Contraseña -->
+                <div>
+                    <label for="confirmPassword" class="block text-sm font-medium text-cosmic-200 mb-2">
+                        <i class="fas fa-shield-alt mr-2 text-gold-400"></i>
+                        Confirmar Nueva Contraseña
+                    </label>
+                    <div class="relative">
+                        <input type="password" 
+                               id="confirmPassword" 
+                               name="new_password_confirm"
+                               required
+                               class="w-full px-4 py-3 bg-cosmic-900 border border-cosmic-600 rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent text-cosmic-100 pr-12"
+                               placeholder="Confirma tu nueva contraseña">
+                        <button type="button" onclick="togglePasswordVisibility('confirmPassword', 'toggleConfirm')" 
+                                class="absolute right-3 top-1/2 transform -translate-y-1/2 text-cosmic-400 hover:text-cosmic-200">
+                            <i id="toggleConfirm" class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <div id="confirmError" class="hidden text-red-400 text-sm mt-1">
+                        <i class="fas fa-exclamation-circle mr-1"></i>
+                        Las contraseñas no coinciden
+                    </div>
+                </div>
+
+                <!-- Requisitos de seguridad -->
+                <div class="bg-cosmic-700/30 rounded-lg p-4 border border-cosmic-600">
+                    <h4 class="font-semibold text-gold-300 mb-2 text-sm">
+                        <i class="fas fa-list-check mr-2"></i>
+                        Requisitos de Seguridad:
+                    </h4>
+                    <ul class="space-y-1 text-xs">
+                        <li id="req-length" class="flex items-center text-cosmic-300">
+                            <i class="fas fa-circle text-cosmic-500 mr-2 text-xs"></i>
+                            <span>Mínimo 8 caracteres</span>
+                        </li>
+                        <li id="req-uppercase" class="flex items-center text-cosmic-300">
+                            <i class="fas fa-circle text-cosmic-500 mr-2 text-xs"></i>
+                            <span>Al menos una letra mayúscula</span>
+                        </li>
+                        <li id="req-lowercase" class="flex items-center text-cosmic-300">
+                            <i class="fas fa-circle text-cosmic-500 mr-2 text-xs"></i>
+                            <span>Al menos una letra minúscula</span>
+                        </li>
+                        <li id="req-number" class="flex items-center text-cosmic-300">
+                            <i class="fas fa-circle text-cosmic-500 mr-2 text-xs"></i>
+                            <span>Al menos un número</span>
+                        </li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Footer -->
+        <div class="p-6 border-t border-cosmic-600 flex space-x-3">
+            <button onclick="closePasswordModal()" 
+                    class="flex-1 border border-cosmic-500 text-cosmic-300 hover:text-cosmic-100 py-3 rounded-lg font-medium transition-colors">
+                <i class="fas fa-times mr-2"></i>Cancelar
+            </button>
+            <button onclick="changePassword()" 
+                    id="changePasswordBtn"
+                    class="flex-1 bg-gradient-to-r from-gold-500 to-primary-500 hover:from-gold-600 hover:to-primary-600 text-white py-3 rounded-lg font-medium transition-all duration-300">
+                <i class="fas fa-save mr-2"></i>Cambiar Contraseña
+            </button>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+function showSuccessModal() {
+    closePasswordModal();
+    document.getElementById('successModal').classList.remove('hidden');
+    document.body.classList.add('overflow-hidden');
+    
+    // Auto redirect after 5 seconds if user doesn't click
+    setTimeout(() => {
+        redirectToLogin();
+    }, 5000);
+}
+
+function redirectToLogin() {
+    window.location.href = '/login/';
+}
+
+function openPasswordModal() {
+    document.getElementById('passwordModal').classList.remove('hidden');
+    document.body.classList.add('overflow-hidden');
+    
+    // Reset form
+    document.getElementById('passwordForm').reset();
+    hideError();
+    resetPasswordStrength();
+}
+
+function closePasswordModal() {
+    document.getElementById('passwordModal').classList.add('hidden');
+    document.body.classList.remove('overflow-hidden');
+}
+
+function togglePasswordVisibility(inputId, iconId) {
+    const input = document.getElementById(inputId);
+    const icon = document.getElementById(iconId);
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'fas fa-eye-slash';
+    } else {
+        input.type = 'password';
+        icon.className = 'fas fa-eye';
+    }
+}
+
+function showError(message) {
+    const errorDiv = document.getElementById('passwordError');
+    const errorText = document.getElementById('passwordErrorText');
+    errorText.textContent = message;
+    errorDiv.classList.remove('hidden');
+}
+
+function hideError() {
+    document.getElementById('passwordError').classList.add('hidden');
+}
+
+function validatePasswordStrength() {
+    const password = document.getElementById('newPassword').value;
+    const strengthBar = document.getElementById('strengthBar');
+    const strengthText = document.getElementById('strengthText');
+    
+    const requirements = {
+        length: password.length >= 8,
+        uppercase: /[A-Z]/.test(password),
+        lowercase: /[a-z]/.test(password),
+        number: /\d/.test(password)
+    };
+    
+    // Update requirement indicators
+    updateRequirement('req-length', requirements.length);
+    updateRequirement('req-uppercase', requirements.uppercase);
+    updateRequirement('req-lowercase', requirements.lowercase);
+    updateRequirement('req-number', requirements.number);
+    
+    // Calculate strength
+    const score = Object.values(requirements).filter(Boolean).length;
+    const strength = ['Muy débil', 'Débil', 'Regular', 'Buena', 'Excelente'][score];
+    const colors = ['bg-red-500', 'bg-red-400', 'bg-yellow-500', 'bg-green-400', 'bg-green-500'];
+    const widths = [0, 25, 50, 75, 100];
+    
+    strengthBar.className = `h-2 rounded-full transition-all duration-300 ${colors[score]}`;
+    strengthBar.style.width = `${widths[score]}%`;
+    strengthText.textContent = strength;
+    strengthText.className = `text-xs ${score >= 3 ? 'text-green-400' : score >= 2 ? 'text-yellow-400' : 'text-red-400'}`;
+    
+    return score >= 4; // Requiere excelente
+}
+
+function updateRequirement(id, met) {
+    const element = document.getElementById(id);
+    const icon = element.querySelector('i');
+    
+    if (met) {
+        icon.className = 'fas fa-check text-green-400 mr-2 text-xs';
+        element.classList.add('text-green-400');
+        element.classList.remove('text-cosmic-300');
+    } else {
+        icon.className = 'fas fa-circle text-cosmic-500 mr-2 text-xs';
+        element.classList.remove('text-green-400');
+        element.classList.add('text-cosmic-300');
+    }
+}
+
+function resetPasswordStrength() {
+    const strengthBar = document.getElementById('strengthBar');
+    const strengthText = document.getElementById('strengthText');
+    
+    strengthBar.style.width = '0%';
+    strengthBar.className = 'h-2 rounded-full transition-all duration-300';
+    strengthText.textContent = 'Muy débil';
+    strengthText.className = 'text-xs text-cosmic-400';
+    
+    ['req-length', 'req-uppercase', 'req-lowercase', 'req-number'].forEach(id => {
+        updateRequirement(id, false);
+    });
+}
+
+function validatePasswordMatch() {
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    const confirmError = document.getElementById('confirmError');
+    
+    if (confirmPassword && newPassword !== confirmPassword) {
+        confirmError.classList.remove('hidden');
+        return false;
+    } else {
+        confirmError.classList.add('hidden');
+        return true;
+    }
+}
+
+function changePassword() {
+    hideError();
+    
+    const currentPassword = document.getElementById('currentPassword').value;
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    
+    // Validations
+    if (!currentPassword || !newPassword || !confirmPassword) {
+        showError('Todos los campos son requeridos');
+        return;
+    }
+    
+    if (!validatePasswordStrength()) {
+        showError('La nueva contraseña debe cumplir todos los requisitos de seguridad');
+        return;
+    }
+    
+    if (!validatePasswordMatch()) {
+        showError('Las contraseñas no coinciden');
+        return;
+    }
+    
+    // Show loading
+    const btn = document.getElementById('changePasswordBtn');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Cambiando...';
+    btn.disabled = true;
+    
+    // Send to API via appWeb proxy
+    const formData = new FormData();
+    formData.append('old_password', currentPassword);
+    formData.append('new_password', newPassword);
+    formData.append('new_password_confirm', confirmPassword);
+    
+    // Get CSRF token from the page
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    formData.append('csrfmiddlewaretoken', csrfToken);
+    
+    fetch('/cambiar-password/', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Success - Show success modal instead of ugly alert
+            showSuccessModal();
+        } else {
+            // Error
+            showError(data.error || 'Error al cambiar la contraseña');
+        }
+    })
+    .catch(error => {
+        showError('Error de conexión. Inténtalo de nuevo.');
+    })
+    .finally(() => {
+        // Reset button
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    });
+}
+
+// Event listeners
+document.getElementById('newPassword').addEventListener('input', validatePasswordStrength);
+document.getElementById('confirmPassword').addEventListener('input', validatePasswordMatch);
+
+// Get auth token for API calls
+function getAuthToken() {
+    // Try to get token from user session or cookie
+    // For now, return empty string - the API should handle session auth
+    return '';
+}
+
+// Close modal with ESC
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closePasswordModal();
+    }
+});
+
+// Close modal clicking outside
+document.getElementById('passwordModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closePasswordModal();
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}

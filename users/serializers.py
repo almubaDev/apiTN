@@ -20,7 +20,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         validated_data.pop('password_confirm')
         user = CustomUser.objects.create_user(**validated_data)
         # Crear perfil automáticamente
-        Profile.objects.create(user=user)
+        #Profile.objects.create(user=user)
         return user
 
 
@@ -82,7 +82,28 @@ class PasswordChangeSerializer(serializers.Serializer):
         return value
 
 
+class PasswordResetSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    
+    def validate_email(self, value):
+        if not CustomUser.objects.filter(email=value).exists():
+            raise serializers.ValidationError("No existe un usuario con este email")
+        return value
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    token = serializers.CharField()
+    uid = serializers.CharField()
+    new_password = serializers.CharField(min_length=8)
+    new_password_confirm = serializers.CharField()
+    
+    def validate(self, attrs):
+        if attrs['new_password'] != attrs['new_password_confirm']:
+            raise serializers.ValidationError("Las contraseñas no coinciden")
+        return attrs
+
+
 class ProfileUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
         fields = ['fecha_nacimiento', 'telefono', 'avatar', 'biografia']
+        

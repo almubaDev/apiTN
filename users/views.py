@@ -4,6 +4,11 @@ from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import login, logout
 from django.shortcuts import get_object_or_404
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+from django.core.mail import send_mail
+from django.conf import settings
 
 from .models import CustomUser, Profile
 from .serializers import (
@@ -138,3 +143,65 @@ def user_detail(request):
         'user': UserSerializer(user).data,
         'profile': ProfileSerializer(user.profile).data
     }, status=status.HTTP_200_OK)
+    
+
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def password_reset_request(request):
+    """Solicitar reset de contraseña"""
+    serializer = PasswordResetSerializer(data=request.data)
+    if serializer.is_valid():
+        email = serializer.validated_data['email']
+        user = CustomUser.objects.get(email=email)
+        
+        # Generar token
+        token = default_token_generator.make_token(user)
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        
+        # Crear enlace de reset
+        reset_url = f"{settings.FRONTEND_URL}/reset-password/{uid}/{token}/"
+        
+        # Enviar email (necesitarás configurar SMTP)
+        send_mail(
+            subject='Recuperación de contraseña - Tarotnaútica',
+            message=f'Usa este enlace para recuperar tu contraseña: {reset_url}',
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[email],
+            fail_silently=False,
+        )
+        
+        return Response({
+            'message': 'Se ha enviado un enlace de recuperación a tu email'
+        }, status=status.HTTP_200_OK)
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def password_reset_confirm(request):
+    """Confirmar reset de contraseña"""
+    serializer = PasswordResetConfirmSerializer(data=request.data)
+    if serializer.is_valid():
+        try:
+            uid = force_str(urlsafe_base64_decode(serializer.validated_data['uid']))
+            user = CustomUser.objects.get(pk=uid)
+            token = serializer.validated_data['token']
+            
+            if default_token_generator.check_token(user, token):
+                user.set_password(serializer.validated_data['new_password'])
+                user.save()
+                
+                return Response({
+                    'message': 'Contraseña actualizada exitosamente'
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error': 'Token inválido o expirado'
+                }, status=status.HTTP_400_BAD_REQUEST)
+                
+        except (TypeError, ValueError, OverflowError, CustomUser.DoesNotExist):
+            return Response({
+                'error': 'Token inválido'
+            }, status=status.HTTP_400_BAD_REQUEST)
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

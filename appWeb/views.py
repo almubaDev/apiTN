@@ -8,7 +8,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.conf import settings
 from django.urls import reverse
-
+from django.views.decorators.csrf import csrf_exempt
 from .forms import LoginForm, RegisterForm, ProfileForm, ConsultaTarotForm, ContactForm
 
 
@@ -62,8 +62,15 @@ def home(request):
     # Obtener algunos sets destacados para mostrar en home
     sets_data = api.get('/oraculo/sets-con-mazos/')
     
+    # Calcular total de mazos de todos los sets
+    total_mazos = 0
+    if sets_data:
+        for set_item in sets_data:
+            total_mazos += len(set_item.get('mazos', []))
+    
     context = {
         'sets': sets_data[:3] if sets_data else [],  # Solo los primeros 3 para el home
+        'total_mazos': total_mazos,  # Total de mazos disponibles
         'user_authenticated': request.user.is_authenticated,
     }
     
@@ -85,12 +92,13 @@ def login_view(request):
             remember_me = form.cleaned_data.get('remember_me', False)
             
             # Autenticar usando nuestra API
-            api_response = requests.post('http://localhost:8000/api/users/login/', {
+            api = APIClient(request)
+            api_response = api.post('/users/login/', {
                 'email': email,
                 'password': password
             })
             
-            if api_response.status_code == 200:
+            if api_response and api_response.status_code == 200:
                 # Login exitoso en API, ahora hacer login en Django
                 user = authenticate(request, username=email, password=password)
                 if user:
@@ -118,24 +126,34 @@ def register_view(request):
         form = RegisterForm(request.POST)
         if form.is_valid():
             # Registrar usando nuestra API
-            api_response = requests.post('http://localhost:8000/api/users/register/', {
+            api = APIClient(request)
+            api_response = api.post('/users/register/', {
                 'email': form.cleaned_data['email'],
                 'nombre': form.cleaned_data['nombre'],
                 'password': form.cleaned_data['password1'],
                 'password_confirm': form.cleaned_data['password2']
             })
             
-            if api_response.status_code == 201:
-                messages.success(request, '¡Cuenta creada exitosamente! Ahora puedes iniciar sesión.')
-                return redirect('appWeb:login')
+            if api_response and api_response.status_code == 201:
+                # Usuario creado exitosamente, ahora hacer login automático
+                user = authenticate(request, username=form.cleaned_data['email'], password=form.cleaned_data['password1'])
+                if user:
+                    login(request, user)
+                    messages.success(request, '¡Bienvenido a Tarotnaútica! Tu cuenta ha sido creada exitosamente.')
+                else:
+                    messages.success(request, '¡Cuenta creada exitosamente! Por favor inicia sesión.')
+                return redirect('appWeb:home')
             else:
-                error_data = api_response.json() if api_response.content else {}
-                for field, errors in error_data.items():
-                    if isinstance(errors, list):
-                        for error in errors:
-                            messages.error(request, f'{field}: {error}')
-                    else:
-                        messages.error(request, f'{field}: {errors}')
+                try:
+                    error_data = api_response.json() if api_response and api_response.content else {}
+                    for field, errors in error_data.items():
+                        if isinstance(errors, list):
+                            for error in errors:
+                                messages.error(request, f'{field}: {error}')
+                        else:
+                            messages.error(request, f'{field}: {errors}')
+                except:
+                    messages.error(request, 'Error al crear la cuenta. Inténtalo de nuevo.')
     
     return render(request, 'appWeb/auth/register.html', {'form': form})
 
@@ -288,7 +306,7 @@ def perfil(request):
         if form.is_valid():
             # Actualizar perfil usando API
             profile_response = api.post('/users/profile/update/', {
-                'fecha_nacimiento': form.cleaned_data.get('fecha_nacimiento'),
+                'fecha_nacimiento': form.cleaned_data.get('fecha_nacimiento').isoformat() if form.cleaned_data.get('fecha_nacimiento') else None,
                 'telefono': form.cleaned_data.get('telefono'),
                 'biografia': form.cleaned_data.get('biografia'),
             })
@@ -296,6 +314,8 @@ def perfil(request):
             if profile_response and profile_response.status_code == 200:
                 messages.success(request, 'Perfil actualizado exitosamente.')
                 return redirect('appWeb:perfil')
+            else:
+                messages.error(request, 'Error al actualizar el perfil.')
     
     context = {
         'form': form,
@@ -307,6 +327,98 @@ def perfil(request):
     
     return render(request, 'appWeb/perfil/index.html', context)
 
+@login_required
+def editar_perfil(request):
+    """Editar perfil del usuario - consume API"""
+    api = APIClient(request)
+    
+    if request.method == 'POST':
+        # Tomar datos del formulario y enviarlos a la API
+        data = {}
+        
+        # Datos del profile
+        if request.POST.get('fecha_nacimiento'):
+            data['fecha_nacimiento'] = request.POST.get('fecha_nacimiento')
+        
+        if request.POST.get('biografia'):
+            data['biografia'] = request.POST.get('biografia')
+        
+        # CORREGIDO: Usar el método correcto de APIClient
+        try:
+            response = requests.put(
+                f"{api.base_url}/users/profile/update/",
+                headers=api._get_headers(),
+                data=json.dumps(data)
+            )
+            
+            if response.status_code == 200:
+                messages.success(request, 'Perfil actualizado exitosamente.')
+                return redirect('appWeb:perfil')
+            else:
+                messages.error(request, f'Error al actualizar el perfil. Código: {response.status_code}')
+        except Exception as e:
+            messages.error(request, f'Error de conexión: {str(e)}')
+    
+    # GET: Mostrar formulario
+    form = ProfileForm(instance=request.user.profile if hasattr(request.user, 'profile') else None)
+    
+    context = {
+        'form': form,
+        'page_title': 'Editar Perfil'
+    }
+    
+    return render(request, 'appWeb/perfil/editar.html', context)
+
+@login_required
+@require_http_methods(["POST"])
+def cambiar_password(request):
+    """Cambiar contraseña usando la API"""
+    api = APIClient(request)
+    
+    try:
+        # Obtener datos del formulario
+        data = {
+            'old_password': request.POST.get('old_password'),
+            'new_password': request.POST.get('new_password'),
+            'new_password_confirm': request.POST.get('new_password_confirm')
+        }
+        
+        print(f"DEBUG - Datos a enviar: {data}")
+        
+        # CORREGIDO: Usar APIClient correctamente
+        response = api.post('/users/change-password/', data)
+        
+        if response and response.status_code == 200:
+            print(f"DEBUG - Success: {response.json()}")
+            # Logout del usuario por seguridad
+            logout(request)
+            return JsonResponse({
+                'success': True,
+                'message': 'Contraseña cambiada exitosamente'
+            })
+        else:
+            print(f"DEBUG - Error status: {response.status_code if response else 'No response'}")
+            if response:
+                print(f"DEBUG - Error content: {response.content}")
+                try:
+                    error_data = response.json()
+                    print(f"DEBUG - Error JSON: {error_data}")
+                except:
+                    error_data = {'error': f'HTTP {response.status_code}'}
+            else:
+                error_data = {'error': 'No response from API'}
+            
+            return JsonResponse({
+                'success': False,
+                'error': error_data.get('error', 'Error al cambiar contraseña')
+            })
+            
+    except Exception as e:
+        print(f"DEBUG - Exception: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': f'Error de conexión: {str(e)}'
+        })
 
 @login_required
 def comprar_creditos(request):

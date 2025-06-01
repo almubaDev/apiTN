@@ -1,6 +1,10 @@
 from django.urls import path
 from . import views
 
+
+
+app_name = 'users'
+
 urlpatterns = [
     # Autenticación
     path('register/', views.register, name='register'),
@@ -14,4 +18,7 @@ urlpatterns = [
     
     # Cambio de contraseña
     path('change-password/', views.change_password, name='change-password'),
+    # Recuperación de contraseña
+    path('password-reset/', views.password_reset_request, name='password-reset'),
+    path('password-reset-confirm/', views.password_reset_confirm, name='password-reset-confirm'),
 ]

@@ -23,7 +23,9 @@ urlpatterns = [
     
     # Perfil y billing
     path('perfil/', views.perfil, name='perfil'),
+    path('perfil/editar/', views.editar_perfil, name='editar_perfil'),
     path('creditos/', views.comprar_creditos, name='comprar_creditos'),
+    path('cambiar-password/', views.cambiar_password, name='cambiar_password'),
     path('historial/', views.historial_consultas, name='historial_consultas'),
     path('motor-nautica/', views.motor_nautica, name='motor_nautica'),
     
