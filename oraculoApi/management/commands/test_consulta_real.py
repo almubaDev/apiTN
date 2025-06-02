@@ -1,4 +1,4 @@
-# Crear archivo: oraculoApi/management/commands/test_consulta_real.py
+# Archivo corregido: oraculoApi/management/commands/test_consulta_real.py
 
 import os
 import random
@@ -16,7 +16,7 @@ class Command(BaseCommand):
         parser.add_argument(
             '--pregunta',
             type=str,
-            default='¿Qué debo saber sobre mi futuro profesional?',
+            default='¿Debería aceptar esa nueva oportunidad de trabajo que me ofrecieron?',
             help='Pregunta para la consulta de tarot'
         )
         parser.add_argument(
@@ -36,40 +36,68 @@ class Command(BaseCommand):
             action='store_true',
             help='Mostrar información detallada del proceso'
         )
+        parser.add_argument(
+            '--test-complex',
+            action='store_true',
+            help='Usar pregunta compleja de prueba'
+        )
+        parser.add_argument(
+            '--test-simple',
+            action='store_true',
+            help='Usar pregunta simple de prueba'
+        )
 
     def handle(self, *args, **options):
-        pregunta = options['pregunta']
+        # Seleccionar pregunta según opciones
+        if options['test_complex']:
+            pregunta = "¿Debería aceptar la oferta de trabajo en otra ciudad que me propuso mi ex jefe, considerando que esto significaría alejarme de mi pareja actual y empezar una nueva vida, pero también podría ser la oportunidad profesional que he estado esperando para crecer en mi carrera y mejorar mis ingresos?"
+            self.stdout.write(self.style.WARNING("🧪 USANDO PREGUNTA COMPLEJA DE PRUEBA"))
+        elif options['test_simple']:
+            pregunta = "¿Mi relación actual tiene futuro?"
+            self.stdout.write(self.style.WARNING("🧪 USANDO PREGUNTA SIMPLE DE PRUEBA"))
+        else:
+            pregunta = options['pregunta']
+            
         mazo_id = options['mazo_id']
         tirada_id = options['tirada_id']
         verbose = options['verbose']
         
         self.stdout.write(self.style.SUCCESS("🔮 INICIANDO CONSULTA REAL DE TAROT 🔮"))
-        self.stdout.write("=" * 60)
+        self.stdout.write("=" * 70)
         
         try:
             # Paso 1: Obtener el mazo
             self.stdout.write("\n📚 PASO 1: Obteniendo información del mazo...")
             try:
-                mazo = Mazo.objects.get(id=mazo_id)
+                mazo = Mazo.objects.select_related('set').get(id=mazo_id)
                 self.stdout.write(f"✅ Mazo encontrado: {mazo.nombre}")
                 if verbose:
                     self.stdout.write(f"   📖 Descripción: {mazo.descripcion}")
                     self.stdout.write(f"   🔄 Permite inversiones: {mazo.permite_cartas_invertidas}")
+                    self.stdout.write(f"   📚 Set: {mazo.set.nombre}")
+                    self.stdout.write(f"   📚 Set descripción: {mazo.set.descripcion}")
             except Mazo.DoesNotExist:
                 self.stdout.write(self.style.ERROR(f"❌ Mazo con ID {mazo_id} no encontrado"))
+                self._mostrar_mazos_disponibles()
                 return
             
             # Paso 2: Obtener la tirada
             self.stdout.write("\n🎯 PASO 2: Obteniendo información de la tirada...")
             try:
-                tirada = Tirada.objects.get(id=tirada_id, mazo=mazo)
+                tirada = Tirada.objects.prefetch_related('items').get(id=tirada_id, mazo=mazo)
                 self.stdout.write(f"✅ Tirada encontrada: {tirada.nombre}")
                 if verbose:
                     self.stdout.write(f"   📊 Cantidad de cartas: {tirada.cantidad_cartas}")
                     self.stdout.write(f"   💰 Costo: {tirada.costo} créditos")
                     self.stdout.write(f"   📝 Descripción: {tirada.descripcion}")
+                    
+                    # Mostrar imagen si existe
+                    if tirada.imagen:
+                        self.stdout.write(f"   🖼️ Imagen: {tirada.imagen.url}")
+                        
             except Tirada.DoesNotExist:
                 self.stdout.write(self.style.ERROR(f"❌ Tirada con ID {tirada_id} no encontrada para el mazo {mazo.nombre}"))
+                self._mostrar_tiradas_disponibles(mazo)
                 return
             
             # Paso 3: Obtener cartas disponibles
@@ -94,8 +122,13 @@ class Command(BaseCommand):
             
             if len(items_tirada) != tirada.cantidad_cartas:
                 self.stdout.write(self.style.ERROR(f"❌ Error en configuración: {len(items_tirada)} posiciones vs {tirada.cantidad_cartas} cartas"))
+                if verbose:
+                    self.stdout.write("📋 Posiciones configuradas:")
+                    for item in items_tirada:
+                        self.stdout.write(f"   • {item.orden}: {item.nombre_posicion}")
                 return
             
+            self.stdout.write(f"✅ Configuración correcta: {len(items_tirada)} posiciones")
             for item in items_tirada:
                 self.stdout.write(f"   • {item.nombre_posicion}: {item.descripcion}")
             
@@ -125,18 +158,23 @@ class Command(BaseCommand):
                 
                 orientacion = "🔄 INVERTIDA" if es_invertida else "⬆️ DERECHA"
                 self.stdout.write(f"   {i+1}. {item_tirada.nombre_posicion}: {carta.nombre} ({orientacion})")
+                if verbose:
+                    self.stdout.write(f"      📝 Función: {item_tirada.descripcion}")
+                    self.stdout.write(f"      ⚡ Energía: {significado_usado[:100]}...")
             
-            # Paso 7: Generar prompt para IA
-            self.stdout.write("\n✍️ PASO 7: Creando prompt para Gemini...")
-            prompt = gemini_service.crear_prompt_tarot(pregunta, mazo, cartas_resultado)
+            # Paso 7: Generar prompt para IA (CORREGIDO - Ahora incluye tirada)
+            self.stdout.write("\n✍️ PASO 7: Creando prompt mejorado para Gemini...")
+            prompt = gemini_service.crear_prompt_tarot(pregunta, mazo, tirada, cartas_resultado)
             
             if verbose:
-                self.stdout.write("📝 Prompt generado:")
-                self.stdout.write("-" * 40)
-                # Mostrar solo una parte del prompt para no saturar
-                prompt_preview = prompt[:500] + "..." if len(prompt) > 500 else prompt
-                self.stdout.write(prompt_preview)
-                self.stdout.write("-" * 40)
+                self.stdout.write("📝 Prompt generado (preview):")
+                self.stdout.write("-" * 50)
+                # Mostrar solo las primeras líneas del prompt
+                prompt_lines = prompt.split('\n')[:20]
+                for line in prompt_lines:
+                    self.stdout.write(line)
+                self.stdout.write("... (continúa)")
+                self.stdout.write("-" * 50)
             
             tokens_estimados = len(prompt) // 4
             self.stdout.write(f"📊 Tokens estimados del prompt: ~{tokens_estimados}")
@@ -162,29 +200,38 @@ class Command(BaseCommand):
                 
             except Exception as e:
                 self.stdout.write(self.style.ERROR(f"❌ Error al consultar Gemini: {str(e)}"))
-                return
+                self.stdout.write("💡 Mostrando interpretación de fallback...")
+                interpretacion = gemini_service._get_mystical_fallback_interpretation()
+                tiempo_respuesta = 0
+                tokens_respuesta = len(interpretacion) // 4
+                costo_total = 0
             
             # Paso 9: Mostrar resultados
-            self.stdout.write("\n" + "=" * 60)
+            self.stdout.write("\n" + "=" * 70)
             self.stdout.write(self.style.SUCCESS("🎭 RESULTADO DE LA CONSULTA MÍSTICA 🎭"))
-            self.stdout.write("=" * 60)
+            self.stdout.write("=" * 70)
             
             self.stdout.write(f"\n❓ PREGUNTA:")
             self.stdout.write(f'"{pregunta}"')
+            
+            self.stdout.write(f"\n🎯 TIRADA UTILIZADA:")
+            self.stdout.write(f"📖 Nombre: {tirada.nombre}")
+            self.stdout.write(f"📝 Descripción: {tirada.descripcion}")
+            self.stdout.write(f"💰 Costo: {tirada.costo} créditos")
             
             self.stdout.write(f"\n🃏 CARTAS REVELADAS:")
             for i, carta_info in enumerate(cartas_resultado, 1):
                 orientacion = "🔄 Invertida" if carta_info['es_invertida'] else "⬆️ Derecha"
                 self.stdout.write(f"\n{i}. 📍 {carta_info['posicion']}")
                 self.stdout.write(f"   🎴 {carta_info['carta']['nombre']} ({orientacion})")
-                self.stdout.write(f"   💫 {carta_info['descripcion_posicion']}")
+                self.stdout.write(f"   🎯 {carta_info['descripcion_posicion']}")
                 if verbose:
-                    self.stdout.write(f"   🔮 Energía: {carta_info['significado_usado'][:100]}...")
+                    self.stdout.write(f"   🔮 Energía: {carta_info['significado_usado'][:150]}...")
             
             self.stdout.write(f"\n🌟 INTERPRETACIÓN MÍSTICA:")
-            self.stdout.write("-" * 40)
+            self.stdout.write("-" * 50)
             self.stdout.write(interpretacion)
-            self.stdout.write("-" * 40)
+            self.stdout.write("-" * 50)
             
             # Paso 10: Estadísticas finales
             self.stdout.write(f"\n📈 ESTADÍSTICAS DE LA CONSULTA:")
@@ -193,8 +240,8 @@ class Command(BaseCommand):
             self.stdout.write(f"   📊 Tokens output: ~{tokens_respuesta}")
             self.stdout.write(f"   📊 Tokens totales: ~{tokens_estimados + tokens_respuesta}")
             self.stdout.write(f"   💰 Costo total: ~${costo_total:.6f} USD")
-            self.stdout.write(f"   💰 Costo por usuario: ~${costo_total:.6f} USD")
-            self.stdout.write(f"   💰 Consultas por $1: ~{1/costo_total:.0f}")
+            if costo_total > 0:
+                self.stdout.write(f"   💰 Consultas por $1: ~{1/costo_total:.0f}")
             
             # Generar JSON de respuesta (como lo haría la API)
             respuesta_api = {
@@ -213,13 +260,44 @@ class Command(BaseCommand):
             
             if verbose:
                 self.stdout.write(f"\n📋 RESPUESTA JSON (para desarrollo):")
-                self.stdout.write("-" * 40)
-                self.stdout.write(json.dumps(respuesta_api, indent=2, ensure_ascii=False)[:500] + "...")
-                self.stdout.write("-" * 40)
+                self.stdout.write("-" * 50)
+                # Mostrar JSON compacto
+                json_compact = json.dumps(respuesta_api, indent=2, ensure_ascii=False)
+                if len(json_compact) > 1000:
+                    self.stdout.write(json_compact[:1000] + "...")
+                else:
+                    self.stdout.write(json_compact)
+                self.stdout.write("-" * 50)
             
             self.stdout.write(self.style.SUCCESS("\n🎉 ¡CONSULTA COMPLETADA EXITOSAMENTE! 🎉"))
+            self.stdout.write("\n💡 Usa --test-complex o --test-simple para probar preguntas predefinidas")
+            self.stdout.write("💡 Usa --verbose para ver información detallada")
             
         except Exception as e:
             self.stdout.write(self.style.ERROR(f"\n❌ Error durante la consulta: {str(e)}"))
             self.stdout.write("🔧 Verifica que tengas datos de prueba en la base de datos")
             self.stdout.write("💡 Ejecuta: python manage.py migrate y carga algunos mazos/cartas de prueba")
+            if verbose:
+                import traceback
+                self.stdout.write(f"\n🐛 Traceback completo:")
+                self.stdout.write(traceback.format_exc())
+
+    def _mostrar_mazos_disponibles(self):
+        """Muestra los mazos disponibles si no se encuentra el solicitado"""
+        mazos = Mazo.objects.select_related('set').all()
+        if mazos:
+            self.stdout.write("\n📚 Mazos disponibles:")
+            for mazo in mazos:
+                self.stdout.write(f"   ID {mazo.id}: {mazo.nombre} (Set: {mazo.set.nombre})")
+        else:
+            self.stdout.write("❌ No hay mazos configurados en el sistema")
+
+    def _mostrar_tiradas_disponibles(self, mazo):
+        """Muestra las tiradas disponibles para un mazo"""
+        tiradas = mazo.tiradas.all()
+        if tiradas:
+            self.stdout.write(f"\n🎯 Tiradas disponibles para {mazo.nombre}:")
+            for tirada in tiradas:
+                self.stdout.write(f"   ID {tirada.id}: {tirada.nombre} ({tirada.cantidad_cartas} cartas, {tirada.costo} créditos)")
+        else:
+            self.stdout.write(f"❌ No hay tiradas configuradas para el mazo {mazo.nombre}")

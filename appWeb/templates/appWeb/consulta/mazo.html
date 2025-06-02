@@ -12,7 +12,7 @@
     
     .tirada-card:hover {
         transform: translateY(-4px);
-        box-shadow: 0 20px 40px rgba(139, 92, 246, 0.15);
+        box-shadow: 0 25px 50px rgba(139, 92, 246, 0.15);
     }
     
     .modal {
@@ -43,7 +43,120 @@
     }
     
     .carta-resultado:hover {
-        transform: scale(1.05);
+        transform: scale(1.02);
+    }
+
+    /* Estilos para las cartas del resultado */
+    .carta-resultado .carta-imagen-container {
+        aspect-ratio: 2/3;
+        height: 200px;
+        background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(217, 70, 239, 0.1) 100%);
+        border-radius: 8px;
+        padding: 8px;
+        overflow: hidden;
+    }
+    
+    .carta-resultado img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        border-radius: 6px;
+    }
+
+    /* Estilos para el contenido markdown */
+    .interpretacion-content {
+        line-height: 1.8;
+    }
+
+    .interpretacion-content h1,
+    .interpretacion-content h2,
+    .interpretacion-content h3,
+    .interpretacion-content h4 {
+        color: #e0d4f7;
+        font-weight: 600;
+        margin: 1.5rem 0 1rem 0;
+        font-family: 'Cinzel', serif;
+    }
+
+    .interpretacion-content h1 {
+        font-size: 1.5rem;
+        border-bottom: 2px solid #8b5cf6;
+        padding-bottom: 0.5rem;
+    }
+
+    .interpretacion-content h2 {
+        font-size: 1.3rem;
+        color: #c4b5fd;
+    }
+
+    .interpretacion-content h3 {
+        font-size: 1.2rem;
+        color: #ddd6fe;
+    }
+
+    .interpretacion-content h4 {
+        font-size: 1.1rem;
+        color: #e0d4f7;
+    }
+
+    .interpretacion-content p {
+        margin: 1rem 0;
+        color: #cbd5e1;
+    }
+
+    .interpretacion-content strong {
+        color: #fbbf24;
+        font-weight: 600;
+    }
+
+    .interpretacion-content em {
+        color: #d946ef;
+        font-style: italic;
+    }
+
+    .interpretacion-content ul,
+    .interpretacion-content ol {
+        margin: 1rem 0;
+        padding-left: 1.5rem;
+        color: #cbd5e1;
+    }
+
+    .interpretacion-content li {
+        margin: 0.5rem 0;
+    }
+
+    .interpretacion-content blockquote {
+        border-left: 4px solid #8b5cf6;
+        padding-left: 1rem;
+        margin: 1.5rem 0;
+        background: rgba(139, 92, 246, 0.1);
+        border-radius: 0 8px 8px 0;
+        padding: 1rem;
+        font-style: italic;
+        color: #e0d4f7;
+    }
+
+    .interpretacion-content code {
+        background: rgba(139, 92, 246, 0.2);
+        padding: 0.2rem 0.4rem;
+        border-radius: 4px;
+        font-family: 'Courier New', monospace;
+        color: #e0d4f7;
+    }
+
+    .interpretacion-content pre {
+        background: rgba(15, 23, 42, 0.8);
+        padding: 1rem;
+        border-radius: 8px;
+        overflow-x: auto;
+        margin: 1rem 0;
+        border: 1px solid #334155;
+    }
+
+    /* Estilos para emojis */
+    .interpretacion-content .emoji {
+        font-size: 1.2em;
+        margin: 0 0.2rem;
     }
 </style>
 {% endblock %}
@@ -359,7 +472,7 @@
                         <i class="fas fa-crystal-ball mr-2 text-mystic-400"></i>
                         Interpretación Mística
                     </h4>
-                    <div id="interpretacionIA" class="text-cosmic-200 leading-relaxed whitespace-pre-wrap"></div>
+                    <div id="interpretacionIA" class="interpretacion-content text-cosmic-200 leading-relaxed"></div>
                 </div>
                 
                 <!-- Botones de Acción -->
@@ -391,6 +504,37 @@ var tiradaSeleccionada = {
     costo: 0,
     imagen: ''
 };
+
+// Función para procesar markdown
+function parseMarkdown(text) {
+    // Procesar títulos
+    text = text.replace(/^### (.*$)/gm, '<h3>$1</h3>');
+    text = text.replace(/^## (.*$)/gm, '<h2>$1</h2>');
+    text = text.replace(/^# (.*$)/gm, '<h1>$1</h1>');
+    
+    // Procesar negritas
+    text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    
+    // Procesar cursivas
+    text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    
+    // Procesar saltos de línea dobles como párrafos
+    text = text.replace(/\n\n/g, '</p><p>');
+    text = '<p>' + text + '</p>';
+    
+    // Limpiar párrafos vacíos
+    text = text.replace(/<p><\/p>/g, '');
+    text = text.replace(/<p>\s*<\/p>/g, '');
+    
+    // Procesar listas
+    text = text.replace(/^\- (.*$)/gm, '<li>$1</li>');
+    text = text.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+    
+    // Procesar saltos de línea simples
+    text = text.replace(/\n/g, '<br>');
+    
+    return text;
+}
 
 // Función para obtener CSRF token
 function getCSRFToken() {
@@ -601,9 +745,12 @@ function mostrarResultado(resultado, pregunta) {
     var preguntaElement = document.getElementById('preguntaResultado');
     if (preguntaElement) preguntaElement.textContent = pregunta;
     
-    // Llenar interpretación
+    // Llenar interpretación con procesamiento de markdown
     var interpretacionElement = document.getElementById('interpretacionIA');
-    if (interpretacionElement) interpretacionElement.textContent = resultado.interpretacion_ia || 'Sin interpretación disponible';
+    if (interpretacionElement) {
+        var interpretacionTexto = resultado.interpretacion_ia || 'Sin interpretación disponible';
+        interpretacionElement.innerHTML = parseMarkdown(interpretacionTexto);
+    }
     
     // Llenar cartas
     var cartasGrid = document.getElementById('cartasGrid');
@@ -622,10 +769,10 @@ function mostrarResultado(resultado, pregunta) {
             var orientacionTexto = cartaInfo.es_invertida ? 'Invertida' : 'Derecha';
             
             cartaDiv.innerHTML = 
-                '<div class="aspect-[2/3] bg-cosmic-600 overflow-hidden">' +
+                '<div class="carta-imagen-container">' +
                     '<img src="' + (cartaInfo.carta.imagen || '') + '" ' +
                          'alt="' + (cartaInfo.carta.nombre || '') + '" ' +
-                         'class="w-full h-full object-cover ' + rotacionClass + '">' +
+                         'class="' + rotacionClass + '">' +
                 '</div>' +
                 '<div class="p-4">' +
                     '<h5 class="font-mystical font-semibold text-cosmic-100 mb-1">' + (cartaInfo.posicion || '') + '</h5>' +

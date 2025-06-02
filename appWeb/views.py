@@ -261,9 +261,13 @@ def mazo_detail(request, mazo_id):
     return render(request, 'appWeb/mazos/detail.html', context)
 
 
+# En appWeb/views.py - Solo la parte que cambia en consulta_mazo
+
 @login_required
 def consulta_mazo(request, mazo_id):
-    """Vista para consulta de tiradas de un mazo específico"""
+    """
+    Vista para consulta de tiradas de un mazo específico
+    """
     api = APIClient(request)
     
     # Obtener mazo con sus tiradas
@@ -287,7 +291,7 @@ def consulta_mazo(request, mazo_id):
                 'error': 'Datos incompletos'
             })
         
-        # Obtener datos de la tirada
+        # CAMBIO: Obtener datos completos de la tirada
         tirada_data = api.get(f'/oraculo/tiradas/{tirada_id}/')
         if not tirada_data:
             return JsonResponse({
@@ -306,7 +310,7 @@ def consulta_mazo(request, mazo_id):
                 'creditos_disponibles': wallet_data.get('creditos_disponibles', 0) if wallet_data else 0
             })
         
-        # Realizar consulta
+        # Realizar consulta - AHORA incluye toda la información de la tirada
         consulta_response = api.post('/oraculo/consulta-tarot/', {
             'pregunta': pregunta,
             'set_id': mazo_data['set'],
@@ -317,12 +321,14 @@ def consulta_mazo(request, mazo_id):
         if consulta_response and consulta_response.status_code == 200:
             resultado = consulta_response.json()
             
-            # Procesar el pago de la consulta
+            # Procesar el pago de la consulta con información completa de la tirada
             billing_response = api.post('/billing/procesar-consulta-tarot/', {
                 'costo_creditos': costo,
                 'tirada_info': {
                     'nombre': tirada_data.get('nombre'),
-                    'mazo_nombre': mazo_data.get('nombre')
+                    'descripcion': tirada_data.get('descripcion'),  # NUEVO
+                    'mazo_nombre': mazo_data.get('nombre'),
+                    'cantidad_cartas': tirada_data.get('cantidad_cartas'),  # NUEVO
                 },
                 'pregunta': pregunta,
                 'interpretacion': resultado.get('interpretacion_ia', ''),
@@ -348,8 +354,6 @@ def consulta_mazo(request, mazo_id):
     }
     
     return render(request, 'appWeb/consulta/mazo.html', context)
-
-
 
 @login_required
 def consulta_tarot(request, tirada_id):

@@ -3,7 +3,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 import random
-import logging
+import logging  # AGREGADO: Import del módulo logging
 
 from .models import Set, Mazo, Carta, Tirada, ItemDeTirada
 from .serializers import (
@@ -13,6 +13,7 @@ from .serializers import (
 )
 from .services import gemini_service
 
+# AGREGADO: Configuración del logger
 logger = logging.getLogger(__name__)
 
 
@@ -127,11 +128,11 @@ def consulta_tarot(request):
             }
             cartas_resultado.append(carta_en_tirada)
         
-        # Generar prompt para IA
-        prompt = gemini_service.crear_prompt_tarot(pregunta, mazo, cartas_resultado)
+        # MEJORADO: Pasar el objeto tirada completo al método crear_prompt_tarot
+        prompt = gemini_service.crear_prompt_tarot(pregunta, mazo, tirada, cartas_resultado)
         
         # Obtener interpretación de Gemini
-        logger.info(f"Generando interpretación para usuario: consulta de {tirada.nombre}")
+        logger.info(f"Generando interpretación para tirada: {tirada.nombre}")
         interpretacion_ia = gemini_service.generar_interpretacion_tarot(prompt)
         
         logger.info("Interpretación generada exitosamente")
@@ -148,6 +149,7 @@ def consulta_tarot(request):
         
     except Exception as e:
         logger.error(f"Error en consulta de tarot: {str(e)}")
+        logger.error(f"Tipo de error: {type(e).__name__}")
         return Response({
             'error': f'Error procesando consulta: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -155,7 +157,7 @@ def consulta_tarot(request):
 
 def generar_prompt_ia(pregunta, mazo, cartas_resultado):
     """
-    Genera el prompt que se enviará a la IA
+    Genera el prompt que se enviará a la IA (MÉTODO LEGACY - Ya no se usa)
     """
     prompt = f"""Eres un experto tarotista que proporciona interpretaciones místicas pero prácticas.
 
@@ -186,3 +188,6 @@ Da una interpretación completa, esotérica y mística pero práctica, relaciona
 """
     
     return prompt
+
+
+

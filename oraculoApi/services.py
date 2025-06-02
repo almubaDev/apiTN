@@ -37,7 +37,7 @@ class GeminiService:
                 temperature=0.85,  # Ligeramente más creativo para interpretaciones místicas
                 top_p=0.9,
                 top_k=40,
-                max_output_tokens=1000,  # Optimizado para respuestas concisas pero completas
+                max_output_tokens=1200,  # Aumentado para interpretaciones más completas
                 response_mime_type="text/plain",
             )
             
@@ -141,115 +141,290 @@ ancestral despierte memorias del alma que te guiarán hacia tu verdad más profu
 🌟 La magia está en ti, siempre ha estado ahí. 🌟
         """
     
-    def crear_prompt_tarot(self, pregunta, mazo, cartas_resultado):
+    def crear_prompt_tarot(self, pregunta, mazo, tirada, cartas_resultado):
         """
-        PROMPT MEJORADO - Crear el prompt que genera respuestas específicas y relevantes
+        PROMPT COMPLETAMENTE MEJORADO - Dinámico, estructurado y realista
+        Usa toda la información disponible de los modelos para crear interpretaciones precisas
+        
+        Args:
+            pregunta (str): La pregunta del usuario
+            mazo (Mazo): Objeto del mazo utilizado
+            tirada (Tirada): Objeto de la tirada con toda su información
+            cartas_resultado (list): Lista de cartas con sus posiciones
         """
-        prompt = f"""
-        🧙‍♂️ Eres un tarotista profesional. Tu método es preciso y estructurado. No haces suposiciones: primero analizas, luego respondes.
+        
+        # 1. INFORMACIÓN COMPLETA DE LA TIRADA
+        num_cartas = len(cartas_resultado)
+        tirada_nombre = tirada.nombre
+        tirada_descripcion = tirada.descripcion
+        tirada_costo = tirada.costo
+        
+        # 2. ANÁLISIS DE CONTEXTO DE LA PREGUNTA
+        contexto_pregunta = self._analizar_contexto_pregunta(pregunta)
+        
+        prompt = f"""🔮 SISTEMA DE INTERPRETACIÓN PROFESIONAL DE TAROT 🔮
 
-        TU ORDEN DE LECTURA:
+INSTRUCCIONES FUNDAMENTALES:
+- Eres un tarotista profesional con décadas de experiencia
+- NUNCA inventes información que no tienes
+- Analiza primero, interpreta después
+- Sé específico y directo en tus predicciones
+- Usa toda la información proporcionada de manera precisa
 
-        1. Primero estudias el significado de cada carta revelada.
-        2. Luego recibes la pregunta del consultante.
-        3. Después conectas el mensaje de las cartas con la pregunta.
-        4. Finalmente elaboras una predicción específica y clara.
+═══════════════════════════════════════════════════════════════
 
-        -------------------------------------
-        🔮 MAZO UTILIZADO: {mazo.nombre}
-        🌸 DESCRIPCIÓN DEL MAZO: {mazo.descripcion}
-        -------------------------------------
+📚 INFORMACIÓN DEL MAZO UTILIZADO:
+• Nombre: {mazo.nombre}
+• Descripción: {mazo.descripcion}
+• Permite cartas invertidas: {"Sí" if mazo.permite_cartas_invertidas else "No"}
+• Set: {mazo.set.nombre} - {mazo.set.descripcion}
 
-        ✨ CARTAS EXTRAÍDAS:
-        """
+═══════════════════════════════════════════════════════════════
 
+🎯 TIRADA SELECCIONADA: {tirada_nombre}
+📖 Descripción de la tirada: {tirada_descripcion}
+📊 Número de cartas: {num_cartas} cartas
+💰 Valor energético: {tirada_costo} créditos
+
+🔮 SIGNIFICADO DE LA TIRADA:
+{self._obtener_significado_tirada(tirada, cartas_resultado)}
+
+🔥 PREGUNTA DEL CONSULTANTE:
+"{pregunta}"
+
+💭 CONTEXTO DETECTADO: {contexto_pregunta['tipo']}
+📋 ENFOQUE REQUERIDO: {contexto_pregunta['enfoque']}
+
+═══════════════════════════════════════════════════════════════
+
+🃏 CARTAS EXTRAÍDAS Y SUS POSICIONES:
+"""
+
+        # 3. INFORMACIÓN DETALLADA DE CADA CARTA CON SU CONTEXTO EN LA TIRADA
         for i, carta_info in enumerate(cartas_resultado, 1):
             carta = carta_info['carta']
-            orientacion = "INVERTIDA" if carta_info['es_invertida'] else "DERECHA"
-
+            orientacion = "INVERTIDA ⥯" if carta_info['es_invertida'] else "DERECHA ⬆"
+            
             prompt += f"""
-        🔹 CARTA {i} - {carta_info['posicion'].upper()}:
-        • Nombre: {carta['nombre']} ({orientacion})
-        • Rol en la tirada: {carta_info['descripcion_posicion']}
-        • Significado clave: {carta_info['significado_usado']}
-        """
+┌─ CARTA {i} ─────────────────────────────────────────────┐
+│ 📍 POSICIÓN EN TIRADA: {carta_info['posicion']}
+│ 🎯 ROL ESPECÍFICO: {carta_info['descripcion_posicion']}
+│ 🃏 CARTA REVELADA: {carta['nombre']} ({orientacion})
+│ 🔢 NÚMERO EN MAZO: #{carta.get('numero', 'N/A')}
+│ ⚡ ENERGÍA ACTIVA: {carta_info['significado_usado'][:150]}...
+│ 🧭 CONTEXTO TIRADA: Esta carta responde específicamente a 
+│     "{carta_info['descripcion_posicion']}" en tu consulta
+└────────────────────────────────────────────────────────┘
+"""
+
+        # 4. INSTRUCCIONES ESPECÍFICAS POR CONTEXTO
+        prompt += f"""
+═══════════════════════════════════════════════════════════════
+
+🎭 PROCESO DE INTERPRETACIÓN OBLIGATORIO:
+
+PASO 1 - ANÁLISIS DE LA TIRADA COMPLETA:
+Primero comprende el propósito de la tirada "{tirada_nombre}":
+{tirada_descripcion}
+
+PASO 2 - ANÁLISIS INDIVIDUAL POR POSICIÓN:
+Examina cada carta en su función específica dentro de la tirada:
+{self._generar_guia_posiciones(cartas_resultado)}
+
+PASO 3 - SÍNTESIS DE ENERGÍAS:
+Une las energías de todas las cartas según el diseño de la tirada.
+Busca patrones, contradicciones y complementos entre las posiciones.
+
+PASO 4 - INTERPRETACIÓN CONTEXTUAL:
+{contexto_pregunta['instrucciones_especificas']}
+
+PASO 5 - PREDICCIÓN REALISTA BASADA EN LA TIRADA:
+Proporciona predicciones específicas que honren el diseño y propósito de "{tirada_nombre}".
+
+═══════════════════════════════════════════════════════════════
+
+📝 FORMATO DE RESPUESTA REQUERIDO:
+
+🔮 **RESUMEN DE LA TIRADA "{tirada_nombre.upper()}"**
+[Explicación de qué revela esta tirada específica sobre la consulta]
+
+📊 **INTERPRETACIÓN POR POSICIÓN**"""
+
+        # 5. ESTRUCTURA DINÁMICA BASADA EN LAS POSICIONES REALES DE LA TIRADA
+        for i, carta_info in enumerate(cartas_resultado, 1):
+            orientacion_emoji = "🔄" if carta_info['es_invertida'] else "⬆️"
+            prompt += f"""
+• **{carta_info['posicion']}** ({carta_info['descripcion_posicion']})
+  🃏 {carta_info['carta']['nombre']} {orientacion_emoji}
+  └─ [Interpreta cómo esta carta responde específicamente a "{carta_info['descripcion_posicion']}"]"""
 
         prompt += f"""
 
-        -------------------------------------
-        🧿 AHORA RECIBE LA PREGUNTA:
-        "{pregunta}"
-        -------------------------------------
+🎯 **RESPUESTA DIRECTA A TU PREGUNTA**
+[Respuesta clara y específica a: "{pregunta}"]
 
-        Tu tarea es:
+🔍 **DETALLES REVELADOS**
+[Información adicional que las cartas quieren destacar]
 
-        ➡️ Paso 1: Conecta cada carta con la pregunta.
-        ➡️ Paso 2: Interpreta cómo la energía de cada carta afecta el pasado, presente y futuro de lo preguntado.
-        ➡️ Paso 3: Elabora una predicción clara y concreta, sin dar vueltas.
+⏰ **TIMING Y SEÑALES**
+[Cuándo esperar cambios o qué señales observar]
 
-        🎯 ENFOQUE SEGÚN LA PREGUNTA:
-        """
+🌟 **CONSEJO FINAL**
+[Acción concreta recomendada basada en las cartas]
 
-        # Agregamos enfoque contextual según pregunta
-        if "médic" in pregunta.lower() or "salud" in pregunta.lower():
-            prompt += """
-        🏥 CONTEXTO MÉDICO: 
-        - Di si la consulta médica irá bien o mal.
-        - Describe cómo estará el médico, qué noticias se darán, si hay estudios o tratamientos.
-        """
-        elif "amor" in pregunta.lower():
-            prompt += """
-        💘 CONTEXTO AMOROSO:
-        - Describe claramente qué pasará entre las personas involucradas.
-        - Habla de emociones, reacciones, rupturas o acercamientos.
-        """
-        elif "trabajo" in pregunta.lower():
-            prompt += """
-        💼 CONTEXTO LABORAL:
-        - Expón si habrá oportunidades, conflictos o resoluciones laborales.
-        - Habla del futuro concreto del consultante en el trabajo.
-        """
-        else:
-            prompt += """
-        📌 CONSULTA GENERAL:
-        - Responde exactamente lo que se pregunta.
-        - No filosofes ni hables en abstracto.
-        """
+═══════════════════════════════════════════════════════════════
 
-        prompt += f"""
+⚠️ RESTRICCIONES IMPORTANTES:
+- DEBES interpretar cada carta según su ROL ESPECÍFICO en la tirada "{tirada_nombre}"
+- NO ignores la función de cada posición en el diseño de la tirada
+- NO uses frases vagas como "depende de ti" o "el universo decidirá"
+- NO inventes cartas que no están en la tirada
+- SÍ sé específico sobre probabilidades y tendencias
+- SÍ menciona las cartas por nombre y posición cuando las interpretes
+- SÍ respeta el diseño y propósito original de la tirada seleccionada
+- RESPONDE SOLO DESPUÉS de analizar la tirada completa y cada posición
 
-        -------------------------------------
-        🗝️ FORMATO DE RESPUESTA ESPERADO:
+🌟 AHORA PROCEDE CON LA INTERPRETACIÓN COMPLETA DE LA TIRADA "{tirada_nombre}":
+"""
 
-        **🔮 PREDICCIÓN CLARA:**
-        [Resumen directo de lo que ocurrirá según las cartas]
-
-        **📊 ANÁLISIS POR CARTA:**
-        - Pasado - {cartas_resultado[0]['carta']['nombre']} ({'Invertida' if cartas_resultado[0]['es_invertida'] else 'Derecha'}): [cómo influye]
-        - Presente - {cartas_resultado[1]['carta']['nombre']} ({'Invertida' if cartas_resultado[1]['es_invertida'] else 'Derecha'}): [impacto actual]
-        - Futuro - {cartas_resultado[2]['carta']['nombre']} ({'Invertida' if cartas_resultado[2]['es_invertida'] else 'Derecha'}): [predicción exacta]
-
-        **🔍 DETALLES REVELADOS:**
-        [Información adicional que las cartas quieran destacar]
-
-        **⏳ CUÁNDO OCURRIRÁ:**
-        [Si es posible determinar un plazo o señal]
-
-        ❌ PROHIBIDO:
-        - Ser vago
-        - Usar frases tipo “todo depende de ti”
-        - Dar consejos sin responder primero
-
-        RECUERDA: RESPONDE SOLO DESPUÉS DE ANALIZAR LAS CARTAS.
-
-        ✨ RESPONDE AHORA:
-        """
-
+        logger.info(f"📝 Prompt generado: {len(prompt)} caracteres, ~{len(prompt)//4} tokens estimados")
+        logger.info(f"🎯 Tirada utilizada: {tirada_nombre} con {num_cartas} cartas")
         return prompt
 
+    def _obtener_significado_tirada(self, tirada, cartas_resultado):
+        """
+        Genera una explicación del significado y propósito de la tirada específica
+        """
+        descripcion_base = f"La tirada '{tirada.nombre}' está diseñada para {tirada.descripcion.lower()}"
+        
+        if len(cartas_resultado) == 1:
+            return f"{descripcion_base} Esta tirada de una carta proporciona una respuesta directa y enfocada."
+        elif len(cartas_resultado) == 3:
+            return f"{descripcion_base} Las tres posiciones trabajan juntas para dar una visión temporal y evolutiva de la situación."
+        elif len(cartas_resultado) == 5:
+            return f"{descripcion_base} Las cinco cartas forman un patrón que explora múltiples aspectos interconectados."
+        else:
+            return f"{descripcion_base} Cada posición tiene un propósito específico en el análisis completo."
 
+    def _generar_guia_posiciones(self, cartas_resultado):
+        """
+        Genera una guía específica de qué debe interpretar en cada posición
+        """
+        guia = ""
+        for i, carta_info in enumerate(cartas_resultado, 1):
+            guia += f"\n- Posición {i} ({carta_info['posicion']}): {carta_info['descripcion_posicion']}"
+        return guia
 
-
+    def _analizar_contexto_pregunta(self, pregunta):
+        """
+        Analiza el contexto de la pregunta para proporcionar instrucciones específicas
+        """
+        pregunta_lower = pregunta.lower()
+        
+        # AMOR Y RELACIONES
+        if any(word in pregunta_lower for word in ['amor', 'relación', 'pareja', 'ex', 'matrimonio', 'divorcio', 'infidelidad', 'novio', 'novia', 'esposo', 'esposa']):
+            return {
+                'tipo': 'AMOR Y RELACIONES',
+                'enfoque': 'Emocional y vincular',
+                'instrucciones_especificas': """
+Para consultas de amor:
+- Describe dinámicas emocionales específicas
+- Habla sobre comunicación, confianza y compatibilidad
+- Predice encuentros, reencuentros o separaciones
+- Menciona sentimientos y reacciones de las personas involucradas
+- Da fechas aproximadas para cambios importantes en la relación
+                """
+            }
+        
+        # TRABAJO Y CARRERA
+        elif any(word in pregunta_lower for word in ['trabajo', 'empleo', 'carrera', 'jefe', 'ascenso', 'despido', 'entrevista', 'proyecto', 'negocio', 'empresa']):
+            return {
+                'tipo': 'TRABAJO Y CARRERA',
+                'enfoque': 'Profesional y material',
+                'instrucciones_especificas': """
+Para consultas laborales:
+- Analiza oportunidades de crecimiento profesional
+- Predice cambios en el ambiente laboral
+- Describe relaciones con colegas y superiores
+- Menciona aspectos financieros y estabilidad económica
+- Da consejos sobre decisiones profesionales importantes
+                """
+            }
+        
+        # SALUD
+        elif any(word in pregunta_lower for word in ['salud', 'enfermedad', 'médico', 'doctor', 'hospital', 'síntomas', 'tratamiento', 'cirugía']):
+            return {
+                'tipo': 'SALUD Y BIENESTAR',
+                'enfoque': 'Físico y energético',
+                'instrucciones_especificas': """
+Para consultas de salud:
+- Enfócate en el bienestar general y energía vital
+- Describe cómo el estado emocional afecta la salud física
+- Predice la evolución de tratamientos o consultas médicas
+- Menciona la importancia del autocuidado y prevención
+- NUNCA diagnostiques condiciones médicas específicas
+                """
+            }
+        
+        # DINERO Y FINANZAS
+        elif any(word in pregunta_lower for word in ['dinero', 'finanzas', 'inversión', 'deuda', 'préstamo', 'lotería', 'herencia', 'economía']):
+            return {
+                'tipo': 'DINERO Y FINANZAS',
+                'enfoque': 'Material y práctico',
+                'instrucciones_especificas': """
+Para consultas financieras:
+- Analiza tendencias económicas personales
+- Predice oportunidades de ingresos o pérdidas
+- Describe la relación con el dinero y la abundancia
+- Menciona inversiones, gastos importantes o cambios financieros
+- Da consejos sobre administración y prudencia económica
+                """
+            }
+        
+        # FAMILIA
+        elif any(word in pregunta_lower for word in ['familia', 'madre', 'padre', 'hijo', 'hija', 'hermano', 'hermana', 'abuelo', 'abuela']):
+            return {
+                'tipo': 'FAMILIA Y HOGAR',
+                'enfoque': 'Familiar y doméstico',
+                'instrucciones_especificas': """
+Para consultas familiares:
+- Describe dinámicas familiares y roles
+- Predice cambios en la estructura o armonía familiar
+- Analiza conflictos generacionales o de convivencia
+- Menciona tradiciones, herencias o mudanzas
+- Da consejos sobre comunicación y comprensión familiar
+                """
+            }
+        
+        # ESPIRITUALIDAD
+        elif any(word in pregunta_lower for word in ['espiritual', 'alma', 'propósito', 'misión', 'karma', 'destino', 'energía']):
+            return {
+                'tipo': 'ESPIRITUALIDAD Y PROPÓSITO',
+                'enfoque': 'Espiritual y trascendente',
+                'instrucciones_especificas': """
+Para consultas espirituales:
+- Explora el crecimiento espiritual y la evolución del alma
+- Describe lecciones kármicas y propósitos de vida
+- Predice despertar espiritual o cambios de conciencia
+- Menciona prácticas espirituales recomendadas
+- Da orientación sobre el camino de auto-realización
+                """
+            }
+        
+        # GENERAL/OTROS
+        else:
+            return {
+                'tipo': 'CONSULTA GENERAL',
+                'enfoque': 'Holístico y equilibrado',
+                'instrucciones_especificas': """
+Para consultas generales:
+- Proporciona una visión integral de la situación
+- Analiza múltiples aspectos de la vida que podrían estar afectados
+- Predice cambios importantes en cualquier área
+- Describe patrones y ciclos de vida actuales
+- Da consejos prácticos y aplicables a la situación general
+                """
+            }
 
     def test_connection(self):
         """
