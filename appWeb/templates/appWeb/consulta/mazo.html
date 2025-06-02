@@ -4,6 +4,7 @@
 {% block title %}{{ page_title }} - Tarotnaútica{% endblock %}
 
 {% block extra_css %}
+<meta name="csrf-token" content="{{ csrf_token }}">
 <style>
     .tirada-card {
         transition: all 0.3s ease;
@@ -127,7 +128,7 @@
                     <!-- Imagen de la Tirada -->
                     {% if tirada.imagen %}
                     <div class="aspect-[4/3] bg-cosmic-700 overflow-hidden">
-                        <img src="{{ tirada.imagen }}" 
+                        <img src="{{ tirada.imagen.url }}" 
                              alt="{{ tirada.nombre }}"
                              class="w-full h-full object-cover">
                     </div>
@@ -188,7 +189,7 @@
                         {% endif %}
                         
                         <!-- Botón de Realizar Tirada -->
-                        <button onclick="iniciarConsulta({{ tirada.id }}, '{{ tirada.nombre }}', {{ tirada.costo }}, '{{ tirada.imagen|default:"" }}')" 
+                        <button onclick="iniciarConsulta({{ tirada.id }}, '{{ tirada.nombre|escapejs }}', {{ tirada.costo }}, '{% if tirada.imagen %}{{ tirada.imagen.url|escapejs }}{% endif %}')" 
                                 class="w-full bg-gradient-to-r from-primary-500 to-mystic-500 hover:from-primary-600 hover:to-mystic-600 text-white py-3 rounded-lg font-medium transition-all duration-300 transform hover:scale-105">
                             <i class="fas fa-magic mr-2"></i>
                             Realizar tirada por {{ tirada.costo }} crédito{{ tirada.costo|pluralize }}
@@ -259,6 +260,7 @@
         
         <div class="p-6">
             <form id="formConsulta">
+                {% csrf_token %}
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-cosmic-200 mb-3">
                         <i class="fas fa-question-circle mr-2 text-mystic-400"></i>
@@ -302,7 +304,7 @@
         <!-- Loading State -->
         <div id="loadingState" class="p-8 text-center">
             <div class="mb-6">
-                <img id="tiradaImagen" src="" alt="" class="w-32 h-32 object-cover rounded-lg mx-auto mb-4">
+                <img id="tiradaImagen" src="" alt="" class="w-32 h-32 object-cover rounded-lg mx-auto mb-4" style="display: none;">
                 <div class="loading-spinner w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full mx-auto mb-4"></div>
             </div>
             <h3 class="font-mystical text-xl font-bold text-cosmic-100 mb-2">
@@ -378,21 +380,52 @@
     </div>
 </div>
 
+{% endblock %}
+
 {% block extra_js %}
 <script>
 // Variables globales
-let tiradaSeleccionada = {
+var tiradaSeleccionada = {
     id: null,
     nombre: '',
     costo: 0,
     imagen: ''
 };
 
-// Inicializar eventos
+// Función para obtener CSRF token
+function getCSRFToken() {
+    // Primero intentar obtenerlo de una meta tag
+    var metaToken = document.querySelector('meta[name="csrf-token"]');
+    if (metaToken) {
+        return metaToken.getAttribute('content');
+    }
+    
+    // Luego intentar obtenerlo de un input hidden
+    var inputToken = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (inputToken) {
+        return inputToken.value;
+    }
+    
+    // Finalmente intentar obtenerlo de las cookies
+    var cookies = document.cookie.split(';');
+    for (var i = 0; i < cookies.length; i++) {
+        var cookie = cookies[i].trim();
+        if (cookie.startsWith('csrftoken=')) {
+            return cookie.substring('csrftoken='.length);
+        }
+    }
+    
+    console.error('CSRF token no encontrado');
+    return null;
+}
+
+// Inicializar eventos cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM cargado');
+    
     // Contador de caracteres
-    const textarea = document.getElementById('preguntaConsulta');
-    const contador = document.getElementById('contadorCaracteres');
+    var textarea = document.getElementById('preguntaConsulta');
+    var contador = document.getElementById('contadorCaracteres');
     
     if (textarea && contador) {
         textarea.addEventListener('input', function() {
@@ -401,7 +434,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Formulario de consulta
-    const form = document.getElementById('formConsulta');
+    var form = document.getElementById('formConsulta');
     if (form) {
         form.addEventListener('submit', realizarConsulta);
     }
@@ -409,15 +442,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Iniciar proceso de consulta
 function iniciarConsulta(tiradaId, tiradaNombre, tiradaCosto, tiradaImagen) {
+    console.log('Iniciando consulta:', tiradaId, tiradaNombre, tiradaCosto);
+    
+    // Actualizar variable global
     tiradaSeleccionada = {
         id: tiradaId,
         nombre: tiradaNombre,
         costo: tiradaCosto,
-        imagen: tiradaImagen
+        imagen: tiradaImagen || ''
     };
     
     // Verificar créditos
-    const creditosDisponibles = parseInt(document.getElementById('creditos-disponibles').textContent);
+    var creditosElement = document.getElementById('creditos-disponibles');
+    if (!creditosElement) {
+        console.error('Elemento creditos-disponibles no encontrado');
+        alert('Error: No se pueden verificar los créditos disponibles');
+        return;
+    }
+    
+    var creditosDisponibles = parseInt(creditosElement.textContent) || 0;
+    console.log('Créditos disponibles:', creditosDisponibles);
     
     if (creditosDisponibles < tiradaCosto) {
         // Mostrar modal de créditos insuficientes
@@ -428,8 +472,13 @@ function iniciarConsulta(tiradaId, tiradaNombre, tiradaCosto, tiradaImagen) {
         // Mostrar modal de consulta
         document.getElementById('tiradaNombre').textContent = tiradaNombre;
         document.getElementById('tiradaCosto').textContent = tiradaCosto;
-        document.getElementById('preguntaConsulta').value = '';
-        document.getElementById('contadorCaracteres').textContent = '0';
+        
+        var preguntaInput = document.getElementById('preguntaConsulta');
+        var contadorElement = document.getElementById('contadorCaracteres');
+        
+        if (preguntaInput) preguntaInput.value = '';
+        if (contadorElement) contadorElement.textContent = '0';
+        
         mostrarModal('modalConsulta');
     }
 }
@@ -437,11 +486,26 @@ function iniciarConsulta(tiradaId, tiradaNombre, tiradaCosto, tiradaImagen) {
 // Realizar consulta
 function realizarConsulta(e) {
     e.preventDefault();
+    console.log('Realizando consulta...');
     
-    const pregunta = document.getElementById('preguntaConsulta').value.trim();
+    var preguntaElement = document.getElementById('preguntaConsulta');
+    if (!preguntaElement) {
+        console.error('Elemento preguntaConsulta no encontrado');
+        alert('Error: No se puede obtener la pregunta');
+        return;
+    }
+    
+    var pregunta = preguntaElement.value.trim();
+    console.log('Pregunta:', pregunta);
     
     if (!pregunta) {
         alert('Por favor escribe tu pregunta');
+        return;
+    }
+    
+    if (!tiradaSeleccionada.id) {
+        console.error('No hay tirada seleccionada');
+        alert('Error: No hay tirada seleccionada');
         return;
     }
     
@@ -450,120 +514,172 @@ function realizarConsulta(e) {
     mostrarModalResultado();
     
     // Configurar imagen de tirada en loading
-    const tiradaImg = document.getElementById('tiradaImagen');
-    if (tiradaSeleccionada.imagen) {
-        tiradaImg.src = tiradaSeleccionada.imagen;
-        tiradaImg.style.display = 'block';
-    } else {
-        tiradaImg.style.display = 'none';
+    var tiradaImg = document.getElementById('tiradaImagen');
+    if (tiradaImg) {
+        if (tiradaSeleccionada.imagen) {
+            tiradaImg.src = tiradaSeleccionada.imagen;
+            tiradaImg.style.display = 'block';
+        } else {
+            tiradaImg.style.display = 'none';
+        }
     }
     
+    // Obtener CSRF token
+    var csrfToken = getCSRFToken();
+    if (!csrfToken) {
+        alert('Error: Token de seguridad no encontrado');
+        cerrarModal('modalResultado');
+        return;
+    }
+    
+    console.log('Enviando datos:', {
+        tirada_id: tiradaSeleccionada.id,
+        pregunta: pregunta
+    });
+    
     // Realizar llamada AJAX
-    fetch('', {
+    fetch(window.location.href, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            'X-CSRFToken': csrfToken
         },
         body: new URLSearchParams({
             'tirada_id': tiradaSeleccionada.id,
             'pregunta': pregunta
         })
     })
-    .then(response => response.json())
-    .then(data => {
+    .then(function(response) { 
+        console.log('Respuesta recibida:', response.status);
+        if (!response.ok) {
+            throw new Error('Error HTTP: ' + response.status);
+        }
+        return response.json(); 
+    })
+    .then(function(data) {
+        console.log('Datos recibidos:', data);
+        
         if (data.success) {
             mostrarResultado(data.resultado, pregunta);
             // Actualizar créditos en la UI
-            document.getElementById('creditos-disponibles').textContent = data.creditos_restantes;
+            var creditosElement = document.getElementById('creditos-disponibles');
+            if (creditosElement) {
+                creditosElement.textContent = data.creditos_restantes || 0;
+            }
         } else {
+            console.error('Error en la respuesta:', data.error);
             if (data.error === 'creditos_insuficientes') {
                 cerrarModal('modalResultado');
-                document.getElementById('creditosNecesarios').textContent = data.creditos_necesarios;
-                document.getElementById('creditosActuales').textContent = data.creditos_disponibles;
+                document.getElementById('creditosNecesarios').textContent = data.creditos_necesarios || 0;
+                document.getElementById('creditosActuales').textContent = data.creditos_disponibles || 0;
                 mostrarModal('modalCreditosInsuficientes');
             } else {
-                alert('Error: ' + data.error);
+                alert('Error: ' + (data.error || 'Error desconocido'));
                 cerrarModal('modalResultado');
             }
         }
     })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error de conexión. Inténtalo de nuevo.');
+    .catch(function(error) {
+        console.error('Error completo:', error);
+        alert('Error de conexión: ' + error.message);
         cerrarModal('modalResultado');
     });
 }
 
 // Mostrar resultado
 function mostrarResultado(resultado, pregunta) {
+    console.log('Mostrando resultado:', resultado);
+    
     // Ocultar loading y mostrar resultado
-    document.getElementById('loadingState').style.display = 'none';
-    document.getElementById('resultadoState').classList.remove('hidden');
+    var loadingState = document.getElementById('loadingState');
+    var resultadoState = document.getElementById('resultadoState');
+    
+    if (loadingState) loadingState.style.display = 'none';
+    if (resultadoState) resultadoState.classList.remove('hidden');
     
     // Llenar pregunta
-    document.getElementById('preguntaResultado').textContent = pregunta;
+    var preguntaElement = document.getElementById('preguntaResultado');
+    if (preguntaElement) preguntaElement.textContent = pregunta;
     
     // Llenar interpretación
-    document.getElementById('interpretacionIA').textContent = resultado.interpretacion_ia;
+    var interpretacionElement = document.getElementById('interpretacionIA');
+    if (interpretacionElement) interpretacionElement.textContent = resultado.interpretacion_ia || 'Sin interpretación disponible';
     
     // Llenar cartas
-    const cartasGrid = document.getElementById('cartasGrid');
-    cartasGrid.innerHTML = '';
-    
-    resultado.cartas.forEach(function(cartaInfo) {
-        const cartaDiv = document.createElement('div');
-        cartaDiv.className = 'carta-resultado bg-cosmic-700/50 rounded-lg border border-cosmic-600 overflow-hidden';
+    var cartasGrid = document.getElementById('cartasGrid');
+    if (cartasGrid) {
+        cartasGrid.innerHTML = '';
         
-        cartaDiv.innerHTML = `
-            <div class="aspect-[2/3] bg-cosmic-600 overflow-hidden">
-                <img src="${cartaInfo.carta.imagen}" 
-                     alt="${cartaInfo.carta.nombre}"
-                     class="w-full h-full object-cover ${cartaInfo.es_invertida ? 'transform rotate-180' : ''}">
-            </div>
-            <div class="p-4">
-                <h5 class="font-mystical font-semibold text-cosmic-100 mb-1">${cartaInfo.posicion}</h5>
-                <p class="text-cosmic-300 text-sm mb-2">${cartaInfo.carta.nombre}</p>
-                <div class="flex items-center mb-2">
-                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs ${cartaInfo.es_invertida ? 'bg-orange-500/20 text-orange-300' : 'bg-green-500/20 text-green-300'}">
-                        <i class="fas fa-${cartaInfo.es_invertida ? 'undo' : 'arrow-up'} mr-1"></i>
-                        ${cartaInfo.es_invertida ? 'Invertida' : 'Derecha'}
-                    </span>
-                </div>
-                <p class="text-cosmic-400 text-xs leading-relaxed">${cartaInfo.descripcion_posicion}</p>
-            </div>
-        `;
-        
-        cartasGrid.appendChild(cartaDiv);
-    });
+        var cartas = resultado.cartas || [];
+        for (var i = 0; i < cartas.length; i++) {
+            var cartaInfo = cartas[i];
+            var cartaDiv = document.createElement('div');
+            cartaDiv.className = 'carta-resultado bg-cosmic-700/50 rounded-lg border border-cosmic-600 overflow-hidden';
+            
+            var rotacionClass = cartaInfo.es_invertida ? 'transform rotate-180' : '';
+            var badgeClass = cartaInfo.es_invertida ? 'bg-orange-500/20 text-orange-300' : 'bg-green-500/20 text-green-300';
+            var iconClass = cartaInfo.es_invertida ? 'undo' : 'arrow-up';
+            var orientacionTexto = cartaInfo.es_invertida ? 'Invertida' : 'Derecha';
+            
+            cartaDiv.innerHTML = 
+                '<div class="aspect-[2/3] bg-cosmic-600 overflow-hidden">' +
+                    '<img src="' + (cartaInfo.carta.imagen || '') + '" ' +
+                         'alt="' + (cartaInfo.carta.nombre || '') + '" ' +
+                         'class="w-full h-full object-cover ' + rotacionClass + '">' +
+                '</div>' +
+                '<div class="p-4">' +
+                    '<h5 class="font-mystical font-semibold text-cosmic-100 mb-1">' + (cartaInfo.posicion || '') + '</h5>' +
+                    '<p class="text-cosmic-300 text-sm mb-2">' + (cartaInfo.carta.nombre || '') + '</p>' +
+                    '<div class="flex items-center mb-2">' +
+                        '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs ' + badgeClass + '">' +
+                            '<i class="fas fa-' + iconClass + ' mr-1"></i>' +
+                            orientacionTexto +
+                        '</span>' +
+                    '</div>' +
+                    '<p class="text-cosmic-400 text-xs leading-relaxed">' + (cartaInfo.descripcion_posicion || '') + '</p>' +
+                '</div>';
+            
+            cartasGrid.appendChild(cartaDiv);
+        }
+    }
 }
 
 // Funciones de modal
 function mostrarModal(modalId) {
-    const modal = document.getElementById(modalId);
-    modal.classList.remove('hidden');
-    modal.classList.add('show');
-    document.body.classList.add('overflow-hidden');
+    console.log('Mostrando modal:', modalId);
+    var modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('show');
+        document.body.classList.add('overflow-hidden');
+    }
 }
 
 function cerrarModal(modalId) {
-    const modal = document.getElementById(modalId);
-    modal.classList.add('hidden');
-    modal.classList.remove('show');
-    document.body.classList.remove('overflow-hidden');
+    console.log('Cerrando modal:', modalId);
+    var modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('show');
+        document.body.classList.remove('overflow-hidden');
+    }
 }
 
 function mostrarModalResultado() {
     // Reset states
-    document.getElementById('loadingState').style.display = 'block';
-    document.getElementById('resultadoState').classList.add('hidden');
+    var loadingState = document.getElementById('loadingState');
+    var resultadoState = document.getElementById('resultadoState');
+    
+    if (loadingState) loadingState.style.display = 'block';
+    if (resultadoState) resultadoState.classList.add('hidden');
+    
     mostrarModal('modalResultado');
 }
 
 // Cerrar modal al hacer clic fuera
 document.addEventListener('click', function(e) {
     if (e.target.classList.contains('modal')) {
-        const modalId = e.target.id;
+        var modalId = e.target.id;
         cerrarModal(modalId);
     }
 });
@@ -571,15 +687,15 @@ document.addEventListener('click', function(e) {
 // Cerrar modal con ESC
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
-        const modals = ['modalCreditosInsuficientes', 'modalConsulta', 'modalResultado'];
-        modals.forEach(modalId => {
-            const modal = document.getElementById(modalId);
-            if (!modal.classList.contains('hidden')) {
-                cerrarModal(modalId);
+        var modals = ['modalCreditosInsuficientes', 'modalConsulta', 'modalResultado'];
+        for (var i = 0; i < modals.length; i++) {
+            var modal = document.getElementById(modals[i]);
+            if (modal && !modal.classList.contains('hidden')) {
+                cerrarModal(modals[i]);
+                break;
             }
-        });
+        }
     }
 });
 </script>
-{% endblock %}
 {% endblock %}

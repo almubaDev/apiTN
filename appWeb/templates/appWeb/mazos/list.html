@@ -5,375 +5,277 @@
 
 {% block extra_css %}
 <style>
-    .tirada-card {
+    .filter-sidebar {
+        transition: transform 0.3s ease-in-out;
+    }
+    
+    .filter-sidebar.hidden-mobile {
+        transform: translateX(-100%);
+    }
+    
+    @media (min-width: 768px) {
+        .filter-sidebar.hidden-mobile {
+            transform: translateX(0);
+        }
+    }
+    
+    .mazo-card {
         transition: all 0.3s ease;
     }
     
-    .tirada-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 20px 40px rgba(139, 92, 246, 0.15);
+    .mazo-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 25px 50px rgba(139, 92, 246, 0.15);
     }
     
-    .modal {
-        transition: all 0.3s ease;
-    }
-    
-    .modal.show {
-        opacity: 1;
-        pointer-events: all;
-    }
-    
-    .modal.hidden {
-        opacity: 0;
-        pointer-events: none;
-    }
-    
-    .loading-spinner {
-        animation: spin 1s linear infinite;
-    }
-    
-    @keyframes spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-    }
-    
-    .carta-resultado {
-        transition: transform 0.3s ease;
-    }
-    
-    .carta-resultado:hover {
-        transform: scale(1.05);
+    .overlay-gradient {
+        background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(217, 70, 239, 0.1) 100%);
     }
 </style>
 {% endblock %}
 
 {% block content %}
-{% csrf_token %}
-
 <div class="min-h-screen bg-gradient-to-br from-cosmic-900 via-cosmic-800 to-primary-900/20">
     
     <!-- Header -->
     <div class="pt-20 pb-8">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-8">
+                <h1 class="font-mystical text-3xl md:text-5xl font-bold text-cosmic-100 mb-4">
+                    <i class="fas fa-magic mr-3 text-primary-400"></i>
+                    Mazos Místicos
+                </h1>
+                <p class="text-lg text-cosmic-300 max-w-2xl mx-auto">
+                    Explora nuestra colección de mazos sagrados, cada uno con su propia energía y sabiduría ancestral
+                </p>
+            </div>
             
-            <!-- Breadcrumb -->
-            <nav class="flex items-center space-x-2 text-sm text-cosmic-400 mb-8">
-                <a href="{% url 'appWeb:home' %}" class="hover:text-primary-400 transition-colors">Inicio</a>
-                <i class="fas fa-chevron-right text-xs"></i>
-                <a href="{% url 'appWeb:mazos_list' %}" class="hover:text-primary-400 transition-colors">Mazos</a>
-                <i class="fas fa-chevron-right text-xs"></i>
-                <span class="text-cosmic-200">{{ mazo.nombre }}</span>
-            </nav>
-            
-            <!-- Info del Mazo -->
-            <div class="bg-cosmic-800/80 backdrop-blur-sm rounded-2xl border border-cosmic-600 p-8 mb-8">
-                <div class="flex flex-col md:flex-row items-start gap-6">
-                    <div class="flex-1">
-                        <h1 class="font-mystical text-3xl md:text-4xl font-bold text-cosmic-100 mb-3">
-                            {{ mazo.nombre }}
-                        </h1>
-                        <div class="flex items-center text-cosmic-300 mb-4">
-                            <i class="fas fa-layer-group mr-2 text-primary-400"></i>
-                            <span>{{ mazo.set_nombre }}</span>
-                        </div>
-                        <p class="text-cosmic-200 leading-relaxed">
-                            {{ mazo.descripcion }}
-                        </p>
-                    </div>
-                    
-                    <!-- Info de Créditos -->
-                    {% if wallet %}
-                    <div class="bg-cosmic-700/50 rounded-xl p-6 border border-cosmic-600 min-w-[200px]">
-                        <h3 class="font-mystical text-lg font-semibold text-cosmic-100 mb-3">
-                            <i class="fas fa-wallet mr-2 text-gold-400"></i>
-                            Tus Créditos
-                        </h3>
-                        <div class="text-center mb-4">
-                            <div class="text-3xl font-bold text-gold-400 mb-1" id="creditos-disponibles">{{ wallet.creditos_disponibles }}</div>
-                            <div class="text-cosmic-300 text-sm">Disponibles</div>
-                        </div>
-                        {% if wallet.creditos_disponibles < 5 %}
-                        <a href="{% url 'appWeb:comprar_creditos' %}" 
-                           class="block w-full bg-gradient-to-r from-gold-500 to-primary-500 hover:from-gold-600 hover:to-primary-600 text-white text-center py-2 rounded-lg font-medium transition-all text-sm">
-                            <i class="fas fa-plus mr-1"></i>Obtener Más
-                        </a>
-                        {% endif %}
-                    </div>
-                    {% endif %}
+            <!-- Mobile Filter Toggle -->
+            <div class="md:hidden mb-6 flex justify-between items-center">
+                <div class="text-cosmic-200">
+                    <span class="text-sm">{{ mazos|length }} mazo{{ mazos|length|pluralize }} encontrado{{ mazos|length|pluralize }}</span>
                 </div>
+                <button id="toggleFilters" 
+                        class="flex items-center space-x-2 bg-cosmic-800 text-cosmic-200 px-4 py-2 rounded-lg border border-cosmic-600 hover:border-primary-500 transition-colors">
+                    <i class="fas fa-filter"></i>
+                    <span>Filtros</span>
+                    <i class="fas fa-chevron-down transform transition-transform" id="filterChevron"></i>
+                </button>
             </div>
         </div>
     </div>
     
-    <!-- Lista de Tiradas -->
-    <div class="pb-20">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
+        <div class="flex flex-col md:flex-row gap-8">
             
-            <!-- Section Header -->
-            <div class="text-center mb-12">
-                <h2 class="font-mystical text-3xl font-bold text-cosmic-100 mb-4">
-                    <i class="fas fa-cards mr-3 text-primary-400"></i>
-                    Selecciona tu Tirada Mística
-                </h2>
-                <p class="text-cosmic-300 max-w-2xl mx-auto">
-                    Cada tirada revela diferentes aspectos de tu destino. Elige la que resuene con tu pregunta.
-                </p>
-            </div>
-            
-            <!-- Grid de Tiradas -->
-            {% if mazo.tiradas %}
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-                {% for tirada in mazo.tiradas %}
-                <div class="tirada-card bg-cosmic-800/80 backdrop-blur-sm rounded-xl border border-cosmic-600 overflow-hidden hover:border-primary-500/50">
+            <!-- Sidebar de Filtros -->
+            <div class="md:w-80 flex-shrink-0">
+                <div id="filterSidebar" class="filter-sidebar hidden-mobile md:transform-none bg-cosmic-800/80 backdrop-blur-sm rounded-xl border border-cosmic-600 overflow-hidden">
                     
-                    <!-- Imagen de la Tirada -->
-                    {% if tirada.imagen %}
-                    <div class="aspect-[4/3] bg-cosmic-700 overflow-hidden">
-                        <img src="{{ tirada.imagen }}" 
-                             alt="{{ tirada.nombre }}"
-                             class="w-full h-full object-cover">
-                    </div>
-                    {% else %}
-                    <div class="aspect-[4/3] bg-gradient-to-br from-cosmic-700 to-cosmic-800 flex items-center justify-center">
-                        <div class="text-center">
-                            <i class="fas fa-cards text-4xl text-primary-400 mb-3"></i>
-                            <p class="text-cosmic-300 text-sm">{{ tirada.nombre }}</p>
+                    <!-- Sidebar Header -->
+                    <div class="p-6 border-b border-cosmic-700">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-mystical text-xl font-semibold text-cosmic-100">
+                                <i class="fas fa-stream mr-2 text-primary-400"></i>
+                                Filtrar por Sets
+                            </h3>
+                            <button class="md:hidden text-cosmic-400 hover:text-cosmic-200" onclick="toggleMobileFilters()">
+                                <i class="fas fa-times"></i>
+                            </button>
                         </div>
+                        <p class="text-cosmic-400 text-sm mt-2">Selecciona los sets que quieres explorar</p>
                     </div>
-                    {% endif %}
                     
-                    <!-- Contenido de la Tirada -->
+                    <!-- Filtros por Sets -->
                     <div class="p-6">
-                        <div class="flex items-start justify-between mb-4">
-                            <div class="flex-1">
-                                <h3 class="font-mystical text-xl font-semibold text-cosmic-100 mb-2">
-                                    {{ tirada.nombre }}
-                                </h3>
-                                <div class="flex items-center text-sm text-cosmic-400 mb-3">
-                                    <i class="fas fa-layer-group mr-2"></i>
-                                    <span>{{ tirada.cantidad_cartas }} carta{{ tirada.cantidad_cartas|pluralize }}</span>
-                                </div>
+                        <form method="GET" id="filterForm">
+                            
+                            <!-- Botones de Control -->
+                            <div class="flex gap-2 mb-4">
+                                <button type="button" onclick="selectAllSets()" 
+                                        class="flex-1 text-xs bg-primary-500/20 text-primary-300 px-3 py-2 rounded-lg hover:bg-primary-500/30 transition-colors">
+                                    <i class="fas fa-check-double mr-1"></i>
+                                    Todos
+                                </button>
+                                <button type="button" onclick="clearAllSets()" 
+                                        class="flex-1 text-xs bg-cosmic-700 text-cosmic-300 px-3 py-2 rounded-lg hover:bg-cosmic-600 transition-colors">
+                                    <i class="fas fa-times mr-1"></i>
+                                    Limpiar
+                                </button>
                             </div>
-                            <div class="flex items-center space-x-2 flex-shrink-0">
-                                <i class="fas fa-coins text-gold-400"></i>
-                                <span class="text-xl font-bold text-gold-400">{{ tirada.costo }}</span>
-                            </div>
-                        </div>
-                        
-                        <!-- Descripción -->
-                        <p class="text-cosmic-300 text-sm leading-relaxed mb-6">
-                            {{ tirada.descripcion }}
-                        </p>
-                        
-                        <!-- Items de la Tirada -->
-                        {% if tirada.items %}
-                        <div class="mb-6">
-                            <h4 class="font-medium text-cosmic-200 mb-3 text-sm">
-                                <i class="fas fa-list mr-2"></i>Posiciones:
-                            </h4>
-                            <div class="space-y-2">
-                                {% for item in tirada.items|slice:":3" %}
-                                <div class="flex items-center text-xs text-cosmic-400">
-                                    <div class="w-4 h-4 bg-primary-500/20 rounded-full flex items-center justify-center mr-2 flex-shrink-0">
-                                        <span class="text-primary-400 text-xs">{{ forloop.counter }}</span>
+                            
+                            <!-- Lista de Sets -->
+                            <div class="space-y-3">
+                                {% for set in sets %}
+                                <label class="flex items-start space-x-3 p-3 rounded-lg hover:bg-cosmic-700/50 transition-colors cursor-pointer group">
+                                    <input type="checkbox" 
+                                           name="sets" 
+                                           value="{{ set.id }}" 
+                                           {% if set.id|stringformat:"s" in selected_sets %}checked{% endif %}
+                                           onchange="updateFilters()"
+                                           class="mt-1 rounded bg-cosmic-700 border-cosmic-600 text-primary-500 focus:ring-primary-500 focus:ring-offset-cosmic-800">
+                                    <div class="flex-1 min-w-0">
+                                        <h4 class="font-medium text-cosmic-100 group-hover:text-primary-300 transition-colors">
+                                            {{ set.nombre }}
+                                        </h4>
+                                        <p class="text-xs text-cosmic-400 mt-1">
+                                            {{ set.descripcion }}
+                                        </p>
                                     </div>
-                                    <span class="truncate">{{ item.nombre_posicion }}</span>
+                                </label>
+                                {% empty %}
+                                <div class="text-center py-4 text-cosmic-400">
+                                    <i class="fas fa-search text-2xl mb-2"></i>
+                                    <p>No hay sets disponibles</p>
                                 </div>
                                 {% endfor %}
-                                {% if tirada.items|length > 3 %}
-                                <p class="text-xs text-cosmic-500 text-center">
-                                    +{{ tirada.items|length|add:"-3" }} posición{{ tirada.items|length|add:"-3"|pluralize:"es" }} más
-                                </p>
-                                {% endif %}
                             </div>
-                        </div>
-                        {% endif %}
-                        
-                        <!-- Botón de Realizar Tirada -->
-                        <button onclick="iniciarConsulta({{ tirada.id }}, '{{ tirada.nombre }}', {{ tirada.costo }}, '{{ tirada.imagen|default:"" }}')" 
-                                class="w-full bg-gradient-to-r from-primary-500 to-mystic-500 hover:from-primary-600 hover:to-mystic-600 text-white py-3 rounded-lg font-medium transition-all duration-300 transform hover:scale-105">
-                            <i class="fas fa-magic mr-2"></i>
-                            Realizar tirada por {{ tirada.costo }} crédito{{ tirada.costo|pluralize }}
-                        </button>
+                            
+                            <!-- Botón de Aplicar (solo mobile) -->
+                            <div class="md:hidden mt-6 pt-4 border-t border-cosmic-700">
+                                <button type="button" onclick="applyFiltersAndClose()" 
+                                        class="w-full bg-gradient-to-r from-primary-500 to-mystic-500 text-white py-3 rounded-lg font-medium">
+                                    <i class="fas fa-check mr-2"></i>
+                                    Aplicar Filtros
+                                </button>
+                            </div>
+                        </form>
                     </div>
-                </div>
-                {% endfor %}
-            </div>
-            {% else %}
-            <div class="text-center py-16">
-                <div class="w-24 h-24 bg-cosmic-700/50 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <i class="fas fa-cards text-3xl text-cosmic-400"></i>
-                </div>
-                <h3 class="font-mystical text-xl text-cosmic-200 mb-2">No hay tiradas disponibles</h3>
-                <p class="text-cosmic-400">Este mazo aún no tiene tiradas configuradas.</p>
-            </div>
-            {% endif %}
-        </div>
-    </div>
-</div>
-
-<!-- Modal: Créditos Insuficientes -->
-<div id="modalCreditosInsuficientes" class="modal hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div class="bg-cosmic-800 rounded-2xl border border-red-500/30 max-w-md w-full">
-        <div class="p-6 text-center">
-            <div class="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <i class="fas fa-coins text-3xl text-red-400"></i>
-            </div>
-            <h3 class="font-mystical text-xl font-bold text-cosmic-100 mb-2">
-                Créditos Insuficientes
-            </h3>
-            <p class="text-cosmic-300 mb-4">
-                Necesitas <span id="creditosNecesarios" class="text-gold-400 font-bold"></span> créditos para esta tirada.
-                <br>Actualmente tienes <span id="creditosActuales" class="text-gold-400 font-bold"></span> créditos.
-            </p>
-            <div class="flex gap-3">
-                <button onclick="cerrarModal('modalCreditosInsuficientes')" 
-                        class="flex-1 border border-cosmic-500 text-cosmic-300 py-3 rounded-lg font-medium hover:bg-cosmic-700 transition-colors">
-                    Cancelar
-                </button>
-                <a href="{% url 'appWeb:comprar_creditos' %}" 
-                   class="flex-1 bg-gradient-to-r from-gold-500 to-primary-500 hover:from-gold-600 hover:to-primary-600 text-white py-3 rounded-lg font-medium text-center transition-all">
-                    <i class="fas fa-plus mr-2"></i>Comprar Créditos
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal: Formulario de Consulta -->
-<div id="modalConsulta" class="modal hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div class="bg-cosmic-800 rounded-2xl border border-cosmic-600 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div class="p-6 border-b border-cosmic-700">
-            <div class="flex items-center justify-between">
-                <h3 class="font-mystical text-xl font-bold text-cosmic-100">
-                    <i class="fas fa-magic mr-3 text-primary-400"></i>
-                    Realizar Consulta
-                </h3>
-                <button onclick="cerrarModal('modalConsulta')" class="text-cosmic-400 hover:text-cosmic-200">
-                    <i class="fas fa-times text-xl"></i>
-                </button>
-            </div>
-            <p class="text-cosmic-300 mt-2">
-                Tirada: <span id="tiradaNombre" class="text-primary-400 font-medium"></span> - 
-                Costo: <span id="tiradaCosto" class="text-gold-400 font-bold"></span> créditos
-            </p>
-        </div>
-        
-        <div class="p-6">
-            <form id="formConsulta">
-                <div class="mb-6">
-                    <label class="block text-sm font-medium text-cosmic-200 mb-3">
-                        <i class="fas fa-question-circle mr-2 text-mystic-400"></i>
-                        Escribe tu pregunta al universo
-                    </label>
-                    <textarea id="preguntaConsulta" 
-                              name="pregunta" 
-                              required
-                              maxlength="500"
-                              rows="4"
-                              class="w-full px-4 py-3 bg-cosmic-900 border border-cosmic-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-cosmic-100 placeholder-cosmic-400 resize-none"
-                              placeholder="¿Qué deseas saber? Sé específico en tu consulta..."></textarea>
-                    <div class="flex justify-between mt-2">
-                        <p class="text-cosmic-500 text-xs">Máximo 500 caracteres</p>
-                        <p class="text-cosmic-500 text-xs">
-                            <span id="contadorCaracteres">0</span>/500
-                        </p>
-                    </div>
-                </div>
-                
-                <div class="flex gap-3">
-                    <button type="button" onclick="cerrarModal('modalConsulta')" 
-                            class="flex-1 border border-cosmic-500 text-cosmic-300 py-3 rounded-lg font-medium hover:bg-cosmic-700 transition-colors">
-                        Cancelar
-                    </button>
-                    <button type="submit" 
-                            class="flex-1 bg-gradient-to-r from-primary-500 to-mystic-500 hover:from-primary-600 hover:to-mystic-600 text-white py-3 rounded-lg font-medium transition-all">
-                        <i class="fas fa-crystal-ball mr-2"></i>
-                        Consultar al Oráculo
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Modal: Loading y Resultado -->
-<div id="modalResultado" class="modal hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div class="bg-cosmic-800 rounded-2xl border border-cosmic-600 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        
-        <!-- Loading State -->
-        <div id="loadingState" class="p-8 text-center">
-            <div class="mb-6">
-                <img id="tiradaImagen" src="" alt="" class="w-32 h-32 object-cover rounded-lg mx-auto mb-4">
-                <div class="loading-spinner w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-            </div>
-            <h3 class="font-mystical text-xl font-bold text-cosmic-100 mb-2">
-                Consultando al Oráculo...
-            </h3>
-            <p class="text-cosmic-300">
-                Las energías cósmicas están alineándose para revelarte tu destino
-            </p>
-        </div>
-        
-        <!-- Resultado State -->
-        <div id="resultadoState" class="hidden">
-            <!-- Header -->
-            <div class="p-6 border-b border-cosmic-700">
-                <div class="flex items-center justify-between">
-                    <h3 class="font-mystical text-2xl font-bold text-cosmic-100">
-                        <i class="fas fa-eye mr-3 text-gold-400"></i>
-                        Tu Destino Revelado
-                    </h3>
-                    <button onclick="cerrarModal('modalResultado')" class="text-cosmic-400 hover:text-cosmic-200">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
                 </div>
             </div>
             
-            <!-- Contenido del Resultado -->
-            <div class="p-6">
+            <!-- Contenido Principal -->
+            <div class="flex-1 min-w-0">
                 
-                <!-- Pregunta del Consultante -->
-                <div class="mb-8 bg-primary-900/20 border border-primary-500/30 rounded-lg p-4">
-                    <h4 class="font-mystical text-lg font-semibold text-primary-300 mb-2">
-                        <i class="fas fa-question-circle mr-2"></i>
-                        Tu Pregunta
-                    </h4>
-                    <p id="preguntaResultado" class="text-cosmic-200 italic"></p>
-                </div>
-                
-                <!-- Cartas Reveladas -->
-                <div class="mb-8">
-                    <h4 class="font-mystical text-lg font-semibold text-cosmic-100 mb-4">
-                        <i class="fas fa-cards mr-2 text-gold-400"></i>
-                        Cartas Reveladas
-                    </h4>
-                    <div id="cartasGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <!-- Las cartas se llenarán dinámicamente -->
+                <!-- Resultados Header -->
+                <div class="hidden md:flex items-center justify-between mb-6">
+                    <div class="text-cosmic-200">
+                        <span class="text-lg font-medium">{{ mazos|length }} mazo{{ mazos|length|pluralize }} disponible{{ mazos|length|pluralize }}</span>
+                        {% if selected_sets %}
+                        <div class="flex flex-wrap gap-2 mt-2">
+                            {% for set in sets %}
+                                {% if set.id|stringformat:"s" in selected_sets %}
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs bg-primary-500/20 text-primary-300 border border-primary-500/30">
+                                    {{ set.nombre }}
+                                    <button type="button" onclick="removeSetFilter('{{ set.id }}')" class="ml-2 hover:text-primary-100">
+                                        <i class="fas fa-times text-xs"></i>
+                                    </button>
+                                </span>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
                 
-                <!-- Interpretación de la IA -->
-                <div class="mb-6 bg-cosmic-700/30 rounded-lg p-6 border border-cosmic-600">
-                    <h4 class="font-mystical text-lg font-semibold text-cosmic-100 mb-4">
-                        <i class="fas fa-crystal-ball mr-2 text-mystic-400"></i>
-                        Interpretación Mística
-                    </h4>
-                    <div id="interpretacionIA" class="text-cosmic-200 leading-relaxed whitespace-pre-wrap"></div>
-                </div>
-                
-                <!-- Botones de Acción -->
-                <div class="flex gap-3">
-                    <button onclick="cerrarModal('modalResultado')" 
-                            class="flex-1 bg-gradient-to-r from-primary-500 to-mystic-500 hover:from-primary-600 hover:to-mystic-600 text-white py-3 rounded-lg font-medium transition-all">
-                        <i class="fas fa-check mr-2"></i>
-                        Entendido
-                    </button>
-                    <a href="{% url 'appWeb:historial_consultas' %}" 
-                       class="flex-1 border border-cosmic-500 text-cosmic-300 hover:text-cosmic-100 py-3 rounded-lg font-medium text-center transition-colors">
-                        <i class="fas fa-history mr-2"></i>
-                        Ver Historial
-                    </a>
+                <!-- Lista de Mazos (formato horizontal) -->
+                <div class="space-y-6">
+                    {% for mazo in mazos %}
+                    <div class="mazo-card bg-cosmic-800/80 backdrop-blur-sm rounded-xl border border-cosmic-600 overflow-hidden hover:border-primary-500/50 transition-all duration-300 w-full">
+                        
+                        <!-- Layout Horizontal: 3 Columnas -->
+                        <div class="flex flex-col md:flex-row items-stretch">
+                            
+                            <!-- Columna 1: Imagen de Carta -->
+                            <div class="md:w-32 flex-shrink-0 relative overflow-hidden">
+                                <div class="aspect-[2/3] md:h-40 bg-gradient-to-br from-primary-500/20 to-mystic-500/20 flex items-center justify-center">
+                                    {% if mazo.carta_aleatoria %}
+                                        <!-- Imagen real de la carta -->
+                                        <img src="{{ mazo.carta_aleatoria.imagen }}" 
+                                             alt="{{ mazo.carta_aleatoria.nombre }}"
+                                             class="w-full h-full object-contain carta-imagen"
+                                             oncontextmenu="return false;"
+                                             draggable="false">
+                                    {% else %}
+                                        <!-- Imagen placeholder con patrón místico -->
+                                        <div class="w-full h-full bg-gradient-to-br from-cosmic-700 to-cosmic-800 flex items-center justify-center relative">
+                                            <div class="absolute inset-0 bg-gradient-to-br from-primary-500/10 to-mystic-500/10"></div>
+                                            <div class="relative z-10 text-center">
+                                                <i class="fas fa-magic text-2xl text-primary-400 mb-2"></i>
+                                                <div class="text-xs text-cosmic-300 font-medium">{{ mazo.nombre|truncatewords:2 }}</div>
+                                            </div>
+                                            <!-- Patrón decorativo -->
+                                            <div class="absolute top-2 left-2 w-3 h-3 border border-gold-400/30 rounded-full"></div>
+                                            <div class="absolute bottom-2 right-2 w-2 h-2 bg-primary-400/30 rounded-full"></div>
+                                            <div class="absolute top-1/2 right-2 w-1 h-1 bg-mystic-400/50 rounded-full"></div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Columna 2: Información Principal -->
+                            <div class="flex-1 p-6 flex flex-col justify-center">
+                                <div class="overlay-gradient">
+                                    <!-- Nombre del Mazo -->
+                                    <h3 class="font-mystical text-xl font-semibold text-cosmic-100 mb-2 leading-tight">
+                                        {{ mazo.nombre }}
+                                    </h3>
+                                    
+                                    <!-- Nombre del Set -->
+                                    <div class="flex items-center text-sm text-cosmic-400 mb-3">
+                                        <i class="fas fa-layer-group mr-2"></i>
+                                        <span>{{ mazo.set_nombre }}</span>
+                                    </div>
+                                    
+                                    <!-- Descripción del Mazo -->
+                                    <p class="text-cosmic-300 text-sm leading-relaxed">
+                                        {{ mazo.descripcion }}
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <!-- Columna 3: Características y Acción -->
+                            <div class="md:w-64 flex-shrink-0 p-6 flex flex-col justify-center items-end">
+                                <div class="w-full space-y-4">
+                                    
+                                    <!-- Característica de Cartas Invertidas -->
+                                    {% if mazo.permite_cartas_invertidas %}
+                                    <div class="flex justify-end">
+                                        <span class="inline-flex items-center px-3 py-2 rounded-full text-xs bg-green-500/20 text-green-300 border border-green-500/30">
+                                            <i class="fas fa-sync-alt mr-2"></i>
+                                            Incluye significado de cartas invertidas
+                                        </span>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <!-- Botón de Acción -->
+                                    <div class="flex justify-end">
+                                        <a href="{% url 'appWeb:consulta_mazo' mazo.id %}" 
+                                           class="inline-flex items-center bg-gradient-to-r from-primary-500 to-mystic-500 hover:from-primary-600 hover:to-mystic-600 text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 transform hover:scale-105">
+                                            <i class="fas fa-magic mr-2"></i>
+                                            Consultar
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    
+                    <!-- Estado Vacío -->
+                    <div class="col-span-full">
+                        <div class="text-center py-16">
+                            <div class="w-24 h-24 bg-cosmic-700/50 rounded-full flex items-center justify-center mx-auto mb-6">
+                                <i class="fas fa-search text-3xl text-cosmic-400"></i>
+                            </div>
+                            <h3 class="font-mystical text-xl text-cosmic-200 mb-2">No se encontraron mazos</h3>
+                            <p class="text-cosmic-400 mb-6">
+                                {% if selected_sets %}
+                                    Intenta cambiar los filtros seleccionados
+                                {% else %}
+                                    No hay mazos disponibles en este momento
+                                {% endif %}
+                            </p>
+                            {% if selected_sets %}
+                            <button onclick="clearAllSets(); updateFilters();" 
+                                    class="bg-primary-500 hover:bg-primary-600 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                                <i class="fas fa-refresh mr-2"></i>
+                                Limpiar Filtros
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
@@ -382,288 +284,103 @@
 
 {% block extra_js %}
 <script>
-// Variables globales
-var tiradaSeleccionada = {
-    id: null,
-    nombre: '',
-    costo: 0,
-    imagen: ''
-};
-
-// Inicializar eventos cuando el DOM esté listo
+// Desactivar clic derecho en imágenes de cartas
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM cargado');
-    
-    // Contador de caracteres
-    var textarea = document.getElementById('preguntaConsulta');
-    var contador = document.getElementById('contadorCaracteres');
-    
-    if (textarea && contador) {
-        textarea.addEventListener('input', function() {
-            contador.textContent = this.value.length;
+    // Prevenir clic derecho en imágenes de cartas
+    document.querySelectorAll('.carta-imagen').forEach(function(img) {
+        img.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            return false;
         });
-    }
+        
+        // Prevenir drag
+        img.addEventListener('dragstart', function(e) {
+            e.preventDefault();
+            return false;
+        });
+    });
+});
+
+let filterSidebar = null;
+let filterForm = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    filterSidebar = document.getElementById('filterSidebar');
+    filterForm = document.getElementById('filterForm');
     
-    // Formulario de consulta
-    var form = document.getElementById('formConsulta');
-    if (form) {
-        form.addEventListener('submit', realizarConsulta);
+    // Setup mobile filter toggle
+    const toggleBtn = document.getElementById('toggleFilters');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', toggleMobileFilters);
     }
 });
 
-// Iniciar proceso de consulta
-function iniciarConsulta(tiradaId, tiradaNombre, tiradaCosto, tiradaImagen) {
-    console.log('Iniciando consulta:', tiradaId, tiradaNombre, tiradaCosto);
+function toggleMobileFilters() {
+    const chevron = document.getElementById('filterChevron');
     
-    tiradaSeleccionada = {
-        id: tiradaId,
-        nombre: tiradaNombre,
-        costo: tiradaCosto,
-        imagen: tiradaImagen || ''
-    };
-    
-    // Verificar créditos
-    var creditosElement = document.getElementById('creditos-disponibles');
-    if (!creditosElement) {
-        console.error('Elemento creditos-disponibles no encontrado');
-        return;
-    }
-    
-    var creditosDisponibles = parseInt(creditosElement.textContent) || 0;
-    console.log('Créditos disponibles:', creditosDisponibles);
-    
-    if (creditosDisponibles < tiradaCosto) {
-        // Mostrar modal de créditos insuficientes
-        document.getElementById('creditosNecesarios').textContent = tiradaCosto;
-        document.getElementById('creditosActuales').textContent = creditosDisponibles;
-        mostrarModal('modalCreditosInsuficientes');
+    if (filterSidebar.classList.contains('hidden-mobile')) {
+        // Mostrar
+        filterSidebar.classList.remove('hidden-mobile');
+        if (chevron) chevron.classList.add('rotate-180');
     } else {
-        // Mostrar modal de consulta
-        document.getElementById('tiradaNombre').textContent = tiradaNombre;
-        document.getElementById('tiradaCosto').textContent = tiradaCosto;
-        var preguntaInput = document.getElementById('preguntaConsulta');
-        var contadorElement = document.getElementById('contadorCaracteres');
-        
-        if (preguntaInput) preguntaInput.value = '';
-        if (contadorElement) contadorElement.textContent = '0';
-        
-        mostrarModal('modalConsulta');
+        // Ocultar
+        filterSidebar.classList.add('hidden-mobile');
+        if (chevron) chevron.classList.remove('rotate-180');
     }
 }
 
-// Realizar consulta
-function realizarConsulta(e) {
-    e.preventDefault();
-    console.log('Realizando consulta...');
-    
-    var preguntaElement = document.getElementById('preguntaConsulta');
-    if (!preguntaElement) {
-        console.error('Elemento preguntaConsulta no encontrado');
-        alert('Error: No se puede obtener la pregunta');
-        return;
+function updateFilters() {
+    // En desktop, actualizar automáticamente
+    if (window.innerWidth >= 768) {
+        filterForm.submit();
     }
-    
-    var pregunta = preguntaElement.value.trim();
-    console.log('Pregunta:', pregunta);
-    
-    if (!pregunta) {
-        alert('Por favor escribe tu pregunta');
-        return;
-    }
-    
-    if (!tiradaSeleccionada.id) {
-        console.error('No hay tirada seleccionada');
-        alert('Error: No hay tirada seleccionada');
-        return;
-    }
-    
-    // Cerrar modal de consulta y mostrar loading
-    cerrarModal('modalConsulta');
-    mostrarModalResultado();
-    
-    // Configurar imagen de tirada en loading
-    var tiradaImg = document.getElementById('tiradaImagen');
-    if (tiradaImg) {
-        if (tiradaSeleccionada.imagen) {
-            tiradaImg.src = tiradaSeleccionada.imagen;
-            tiradaImg.style.display = 'block';
-        } else {
-            tiradaImg.style.display = 'none';
-        }
-    }
-    
-    // Obtener CSRF token
-    var csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
-    if (!csrfToken) {
-        console.error('CSRF token no encontrado');
-        alert('Error: Token de seguridad no encontrado');
-        cerrarModal('modalResultado');
-        return;
-    }
-    
-    console.log('Enviando datos:', {
-        tirada_id: tiradaSeleccionada.id,
-        pregunta: pregunta
+    // En mobile, esperar a que presione "Aplicar"
+}
+
+function applyFiltersAndClose() {
+    filterForm.submit();
+}
+
+function selectAllSets() {
+    const checkboxes = document.querySelectorAll('input[name="sets"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = true;
     });
-    
-    // Realizar llamada AJAX
-    fetch(window.location.href, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'X-CSRFToken': csrfToken.value
-        },
-        body: new URLSearchParams({
-            'tirada_id': tiradaSeleccionada.id,
-            'pregunta': pregunta
-        })
-    })
-    .then(function(response) { 
-        console.log('Respuesta recibida:', response.status);
-        if (!response.ok) {
-            throw new Error('Error HTTP: ' + response.status);
-        }
-        return response.json(); 
-    })
-    .then(function(data) {
-        console.log('Datos recibidos:', data);
-        
-        if (data.success) {
-            mostrarResultado(data.resultado, pregunta);
-            // Actualizar créditos en la UI
-            var creditosElement = document.getElementById('creditos-disponibles');
-            if (creditosElement) {
-                creditosElement.textContent = data.creditos_restantes || 0;
-            }
-        } else {
-            console.error('Error en la respuesta:', data.error);
-            if (data.error === 'creditos_insuficientes') {
-                cerrarModal('modalResultado');
-                document.getElementById('creditosNecesarios').textContent = data.creditos_necesarios || 0;
-                document.getElementById('creditosActuales').textContent = data.creditos_disponibles || 0;
-                mostrarModal('modalCreditosInsuficientes');
-            } else {
-                alert('Error: ' + (data.error || 'Error desconocido'));
-                cerrarModal('modalResultado');
-            }
-        }
-    })
-    .catch(function(error) {
-        console.error('Error completo:', error);
-        alert('Error de conexión: ' + error.message);
-        cerrarModal('modalResultado');
+    updateFilters();
+}
+
+function clearAllSets() {
+    const checkboxes = document.querySelectorAll('input[name="sets"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
     });
+    updateFilters();
 }
 
-// Mostrar resultado
-function mostrarResultado(resultado, pregunta) {
-    console.log('Mostrando resultado:', resultado);
-    
-    // Ocultar loading y mostrar resultado
-    var loadingState = document.getElementById('loadingState');
-    var resultadoState = document.getElementById('resultadoState');
-    
-    if (loadingState) loadingState.style.display = 'none';
-    if (resultadoState) resultadoState.classList.remove('hidden');
-    
-    // Llenar pregunta
-    var preguntaElement = document.getElementById('preguntaResultado');
-    if (preguntaElement) preguntaElement.textContent = pregunta;
-    
-    // Llenar interpretación
-    var interpretacionElement = document.getElementById('interpretacionIA');
-    if (interpretacionElement) interpretacionElement.textContent = resultado.interpretacion_ia || 'Sin interpretación disponible';
-    
-    // Llenar cartas
-    var cartasGrid = document.getElementById('cartasGrid');
-    if (cartasGrid) {
-        cartasGrid.innerHTML = '';
-        
-        var cartas = resultado.cartas || [];
-        for (var i = 0; i < cartas.length; i++) {
-            var cartaInfo = cartas[i];
-            var cartaDiv = document.createElement('div');
-            cartaDiv.className = 'carta-resultado bg-cosmic-700/50 rounded-lg border border-cosmic-600 overflow-hidden';
-            
-            var rotacionClass = cartaInfo.es_invertida ? 'transform rotate-180' : '';
-            var badgeClass = cartaInfo.es_invertida ? 'bg-orange-500/20 text-orange-300' : 'bg-green-500/20 text-green-300';
-            var iconClass = cartaInfo.es_invertida ? 'undo' : 'arrow-up';
-            var orientacionTexto = cartaInfo.es_invertida ? 'Invertida' : 'Derecha';
-            
-            cartaDiv.innerHTML = 
-                '<div class="aspect-[2/3] bg-cosmic-600 overflow-hidden">' +
-                    '<img src="' + (cartaInfo.carta.imagen || '') + '" ' +
-                         'alt="' + (cartaInfo.carta.nombre || '') + '" ' +
-                         'class="w-full h-full object-cover ' + rotacionClass + '">' +
-                '</div>' +
-                '<div class="p-4">' +
-                    '<h5 class="font-mystical font-semibold text-cosmic-100 mb-1">' + (cartaInfo.posicion || '') + '</h5>' +
-                    '<p class="text-cosmic-300 text-sm mb-2">' + (cartaInfo.carta.nombre || '') + '</p>' +
-                    '<div class="flex items-center mb-2">' +
-                        '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs ' + badgeClass + '">' +
-                            '<i class="fas fa-' + iconClass + ' mr-1"></i>' +
-                            orientacionTexto +
-                        '</span>' +
-                    '</div>' +
-                    '<p class="text-cosmic-400 text-xs leading-relaxed">' + (cartaInfo.descripcion_posicion || '') + '</p>' +
-                '</div>';
-            
-            cartasGrid.appendChild(cartaDiv);
+function removeSetFilter(setId) {
+    const checkbox = document.querySelector(`input[name="sets"][value="${setId}"]`);
+    if (checkbox) {
+        checkbox.checked = false;
+        updateFilters();
+    }
+}
+
+// Cerrar filtros al hacer clic fuera (solo mobile)
+document.addEventListener('click', function(event) {
+    if (window.innerWidth < 768 && filterSidebar && !filterSidebar.classList.contains('hidden-mobile')) {
+        if (!filterSidebar.contains(event.target) && !document.getElementById('toggleFilters').contains(event.target)) {
+            toggleMobileFilters();
         }
-    }
-}
-
-// Funciones de modal
-function mostrarModal(modalId) {
-    console.log('Mostrando modal:', modalId);
-    var modal = document.getElementById(modalId);
-    if (modal) {
-        modal.classList.remove('hidden');
-        modal.classList.add('show');
-        document.body.classList.add('overflow-hidden');
-    }
-}
-
-function cerrarModal(modalId) {
-    console.log('Cerrando modal:', modalId);
-    var modal = document.getElementById(modalId);
-    if (modal) {
-        modal.classList.add('hidden');
-        modal.classList.remove('show');
-        document.body.classList.remove('overflow-hidden');
-    }
-}
-
-function mostrarModalResultado() {
-    // Reset states
-    var loadingState = document.getElementById('loadingState');
-    var resultadoState = document.getElementById('resultadoState');
-    
-    if (loadingState) loadingState.style.display = 'block';
-    if (resultadoState) resultadoState.classList.add('hidden');
-    
-    mostrarModal('modalResultado');
-}
-
-// Cerrar modal al hacer clic fuera
-document.addEventListener('click', function(e) {
-    if (e.target.classList.contains('modal')) {
-        var modalId = e.target.id;
-        cerrarModal(modalId);
     }
 });
 
-// Cerrar modal con ESC
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        var modals = ['modalCreditosInsuficientes', 'modalConsulta', 'modalResultado'];
-        for (var i = 0; i < modals.length; i++) {
-            var modal = document.getElementById(modals[i]);
-            if (modal && !modal.classList.contains('hidden')) {
-                cerrarModal(modals[i]);
-                break;
-            }
-        }
+// Responsive behavior
+window.addEventListener('resize', function() {
+    if (window.innerWidth >= 768) {
+        // En desktop, asegurar que el sidebar esté visible
+        filterSidebar.classList.remove('hidden-mobile');
+        const chevron = document.getElementById('filterChevron');
+        if (chevron) chevron.classList.remove('rotate-180');
     }
 });
 </script>
