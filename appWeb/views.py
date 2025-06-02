@@ -183,6 +183,50 @@ def sets_list(request):
     return render(request, 'appWeb/sets/list.html', context)
 
 
+def mazos_list(request):
+    """Lista de mazos con filtros por sets"""
+    import random
+    
+    api = APIClient(request)
+    
+    # Obtener todos los sets para el filtro
+    sets_data = api.get('/oraculo/sets/')
+    
+    # Obtener mazos con información básica
+    mazos_data = api.get('/oraculo/mazos/')
+    
+    # Obtener filtros de la URL
+    set_ids = request.GET.getlist('sets')  # Para filtros múltiples por checkbox
+    
+    # Filtrar mazos por sets seleccionados si hay filtros
+    if set_ids:
+        mazos_filtrados = []
+        for mazo in mazos_data or []:
+            if str(mazo.get('set')) in set_ids:
+                mazos_filtrados.append(mazo)
+        mazos_data = mazos_filtrados
+    
+    # Obtener una carta aleatoria para cada mazo
+    if mazos_data:
+        for mazo in mazos_data:
+            cartas_data = api.get('/oraculo/cartas/', {'mazo': mazo['id']})
+            if cartas_data:
+                # Seleccionar una carta aleatoria
+                carta_aleatoria = random.choice(cartas_data)
+                mazo['carta_aleatoria'] = carta_aleatoria
+            else:
+                mazo['carta_aleatoria'] = None
+    
+    context = {
+        'mazos': mazos_data or [],
+        'sets': sets_data or [],
+        'selected_sets': set_ids,
+        'page_title': 'Mazos Místicos'
+    }
+    
+    return render(request, 'appWeb/mazos/list.html', context)
+
+
 def set_detail(request, set_id):
     """Detalle de un set específico"""
     api = APIClient(request)
@@ -215,6 +259,96 @@ def mazo_detail(request, mazo_id):
     }
     
     return render(request, 'appWeb/mazos/detail.html', context)
+
+
+@login_required
+def consulta_mazo(request, mazo_id):
+    """Vista para consulta de tiradas de un mazo específico"""
+    api = APIClient(request)
+    
+    # Obtener mazo con sus tiradas
+    mazo_data = api.get(f'/oraculo/mazos-con-tiradas/{mazo_id}/')
+    
+    if not mazo_data:
+        messages.error(request, 'Mazo no encontrado.')
+        return redirect('appWeb:mazos_list')
+    
+    # Obtener información de créditos del usuario
+    wallet_data = api.get('/billing/mi-wallet/')
+    
+    # Si es POST, manejar la consulta AJAX
+    if request.method == 'POST':
+        tirada_id = request.POST.get('tirada_id')
+        pregunta = request.POST.get('pregunta')
+        
+        if not tirada_id or not pregunta:
+            return JsonResponse({
+                'success': False,
+                'error': 'Datos incompletos'
+            })
+        
+        # Obtener datos de la tirada
+        tirada_data = api.get(f'/oraculo/tiradas/{tirada_id}/')
+        if not tirada_data:
+            return JsonResponse({
+                'success': False,
+                'error': 'Tirada no encontrada'
+            })
+        
+        costo = tirada_data.get('costo', 1)
+        
+        # Verificar créditos
+        if not wallet_data or wallet_data.get('creditos_disponibles', 0) < costo:
+            return JsonResponse({
+                'success': False,
+                'error': 'creditos_insuficientes',
+                'creditos_necesarios': costo,
+                'creditos_disponibles': wallet_data.get('creditos_disponibles', 0) if wallet_data else 0
+            })
+        
+        # Realizar consulta
+        consulta_response = api.post('/oraculo/consulta-tarot/', {
+            'pregunta': pregunta,
+            'set_id': mazo_data['set'],
+            'mazo_id': mazo_id,
+            'tirada_id': tirada_id
+        })
+        
+        if consulta_response and consulta_response.status_code == 200:
+            resultado = consulta_response.json()
+            
+            # Procesar el pago de la consulta
+            billing_response = api.post('/billing/procesar-consulta-tarot/', {
+                'costo_creditos': costo,
+                'tirada_info': {
+                    'nombre': tirada_data.get('nombre'),
+                    'mazo_nombre': mazo_data.get('nombre')
+                },
+                'pregunta': pregunta,
+                'interpretacion': resultado.get('interpretacion_ia', ''),
+                'cartas_resultado': resultado.get('cartas', [])
+            })
+            
+            return JsonResponse({
+                'success': True,
+                'resultado': resultado,
+                'creditos_restantes': wallet_data.get('creditos_disponibles', 0) - costo
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'error': 'Error al procesar la consulta. Inténtalo de nuevo.'
+            })
+    
+    # GET: Mostrar página de consulta
+    context = {
+        'mazo': mazo_data,
+        'wallet': wallet_data,
+        'page_title': f'Consulta con {mazo_data.get("nombre", "Mazo")}'
+    }
+    
+    return render(request, 'appWeb/consulta/mazo.html', context)
+
 
 
 @login_required

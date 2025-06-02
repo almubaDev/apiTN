@@ -15,9 +15,11 @@ urlpatterns = [
     # Explorar
     path('sets/', views.sets_list, name='sets_list'),
     path('sets/<int:set_id>/', views.set_detail, name='set_detail'),
+    path('mazos/', views.mazos_list, name='mazos_list'),
     path('mazos/<int:mazo_id>/', views.mazo_detail, name='mazo_detail'),
     
     # Consulta de tarot
+    path('consulta/mazo/<int:mazo_id>/', views.consulta_mazo, name='consulta_mazo'),
     path('consulta/<int:tirada_id>/', views.consulta_tarot, name='consulta_tarot'),
     path('consulta/<int:tirada_id>/resultado/', views.resultado_consulta, name='resultado_consulta'),
     
