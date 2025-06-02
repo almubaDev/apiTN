@@ -164,7 +164,7 @@
 {% block content %}
 <div class="min-h-screen bg-gradient-to-br from-cosmic-900 via-cosmic-800 to-primary-900/20">
     
-    <!-- Header -->
+    {% comment %} <!-- Header -->
     <div class="pt-20 pb-8">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             
@@ -215,7 +215,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> {% endcomment %}
     
     <!-- Lista de Tiradas -->
     <div class="pb-20">
@@ -241,7 +241,7 @@
                     <!-- Imagen de la Tirada -->
                     {% if tirada.imagen %}
                     <div class="aspect-[4/3] bg-cosmic-700 overflow-hidden">
-                        <img src="{{ tirada.imagen.url }}" 
+                        <img src="{{ tirada.imagen }}" 
                              alt="{{ tirada.nombre }}"
                              class="w-full h-full object-cover">
                     </div>

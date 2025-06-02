@@ -1,0 +1,504 @@
+{% extends 'appWeb/base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }} - Tarotnaútica{% endblock %}
+
+{% block extra_css %}
+<style>
+    .paquete-card {
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .paquete-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 25px 50px rgba(139, 92, 246, 0.25);
+    }
+    
+    .paquete-card.destacado {
+        border: 2px solid #fbbf24;
+        box-shadow: 0 15px 35px rgba(251, 191, 36, 0.3);
+    }
+    
+    .paquete-card.destacado::before {
+        content: "Más Popular";
+        position: absolute;
+        top: -1px;
+        right: 20px;
+        background: linear-gradient(135deg, #fbbf24, #f59e0b);
+        color: white;
+        padding: 8px 16px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border-radius: 0 0 8px 8px;
+        z-index: 10;
+    }
+    
+    .boton-pago {
+        transition: all 0.2s ease;
+    }
+    
+    .boton-pago:hover {
+        transform: scale(1.02);
+    }
+    
+    .boton-pago:active {
+        transform: scale(0.98);
+    }
+    
+    .precio-anterior {
+        position: relative;
+    }
+    
+    .precio-anterior::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: #ef4444;
+        transform: rotate(-15deg);
+    }
+    
+    .wallet-display {
+        background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(251, 191, 36, 0.1));
+        border: 1px solid rgba(139, 92, 246, 0.3);
+        animation: glow 3s ease-in-out infinite alternate;
+    }
+    
+    @keyframes glow {
+        from { box-shadow: 0 0 20px rgba(139, 92, 246, 0.3); }
+        to { box-shadow: 0 0 30px rgba(251, 191, 36, 0.4); }
+    }
+    
+    .metodo-pago-icon {
+        width: 24px;
+        height: 24px;
+        object-fit: contain;
+    }
+    
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(15, 23, 42, 0.8);
+        backdrop-filter: blur(4px);
+        z-index: 9999;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .loading-spinner {
+        width: 60px;
+        height: 60px;
+        border: 4px solid rgba(139, 92, 246, 0.3);
+        border-top: 4px solid #8b5cf6;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-cosmic-900 via-cosmic-800 to-gold-900/20 py-20">
+    
+    <!-- Header -->
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
+        <div class="text-center">
+            <div class="w-20 h-20 bg-gradient-to-br from-gold-500 to-primary-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i class="fas fa-coins text-3xl text-white"></i>
+            </div>
+            <h1 class="font-mystical text-4xl md:text-5xl font-bold text-cosmic-100 mb-4">
+                Obtener Créditos Cósmicos
+            </h1>
+            <p class="text-lg text-cosmic-300 max-w-2xl mx-auto leading-relaxed">
+                Alimenta tu viaje místico con créditos para desbloquear las revelaciones del tarot
+            </p>
+        </div>
+    </div>
+    
+    <!-- Wallet Display -->
+    {% if wallet %}
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
+        <div class="wallet-display rounded-2xl p-6 text-center">
+            <div class="flex items-center justify-center space-x-4">
+                <i class="fas fa-wallet text-3xl text-gold-400"></i>
+                <div>
+                    <p class="text-cosmic-300 text-sm">Créditos Actuales</p>
+                    <p class="text-4xl font-bold text-gold-400" id="creditos-actuales">{{ wallet.creditos_disponibles }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Paquetes de Créditos -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        {% if paquetes %}
+        <!-- Grid de Paquetes -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {% for paquete_data in paquetes %}
+            {% with paquete=paquete_data.paquete botones=paquete_data.botones_disponibles %}
+            <div class="paquete-card bg-cosmic-800/80 backdrop-blur-sm rounded-2xl border border-cosmic-600 p-8 {% if paquete.destacado %}destacado{% endif %}">
+                
+                <!-- Header del Paquete -->
+                <div class="text-center mb-8">
+                    <h3 class="font-mystical text-2xl font-bold text-cosmic-100 mb-2">
+                        {{ paquete.nombre }}
+                    </h3>
+                    <p class="text-cosmic-400 text-sm leading-relaxed">
+                        {{ paquete.descripcion }}
+                    </p>
+                </div>
+                
+                <!-- Cantidad de Créditos -->
+                <div class="text-center mb-6">
+                    <div class="text-5xl font-bold text-gold-400 mb-2">
+                        {{ paquete.cantidad_creditos }}
+                    </div>
+                    <div class="text-cosmic-300 text-sm">
+                        Créditos Místicos
+                    </div>
+                </div>
+                
+                <!-- Pricing -->
+                <div class="text-center mb-6">
+                    {% if paquete.tiene_descuento %}
+                    <div class="space-y-2">
+                        <div class="text-cosmic-400 text-lg precio-anterior">
+                            ${{ paquete.precio_anterior }}
+                        </div>
+                        <div class="text-3xl font-bold text-primary-400">
+                            ${{ paquete.precio }}
+                        </div>
+                        <div class="inline-block bg-red-500/20 text-red-300 px-3 py-1 rounded-full text-sm font-medium">
+                            {{ paquete.porcentaje_descuento }}% OFF
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-3xl font-bold text-primary-400">
+                        ${{ paquete.precio }}
+                    </div>
+                    {% endif %}
+                    <div class="text-cosmic-400 text-sm mt-2">
+                        ${{ paquete.precio_por_credito }} por crédito
+                    </div>
+                </div>
+                
+                <!-- Beneficios -->
+                <div class="mb-8">
+                    <h4 class="font-medium text-cosmic-200 mb-3 text-center">
+                        <i class="fas fa-magic mr-2 text-gold-400"></i>
+                        Qué Incluye:
+                    </h4>
+                    <ul class="space-y-2 text-sm text-cosmic-300">
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-400 mr-3 flex-shrink-0"></i>
+                            <span>{{ paquete.cantidad_creditos }} consultas de tarot</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-400 mr-3 flex-shrink-0"></i>
+                            <span>Acceso a todos los mazos</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-400 mr-3 flex-shrink-0"></i>
+                            <span>Historial completo guardado</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-400 mr-3 flex-shrink-0"></i>
+                            <span>Interpretaciones de IA avanzada</span>
+                        </li>
+                        {% if paquete.destacado %}
+                        <li class="flex items-center">
+                            <i class="fas fa-star text-gold-400 mr-3 flex-shrink-0"></i>
+                            <span class="text-gold-300 font-medium">Mejor valor por crédito</span>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+                
+                <!-- Botones de Pago -->
+                <div class="space-y-3">
+                    {% for boton in botones %}
+                    <button onclick="iniciarPago({{ paquete.id }}, {{ boton.id }}, '{{ boton.metodo_pago.nombre|escapejs }}')"
+                            class="boton-pago w-full flex items-center justify-center space-x-3 py-4 px-6 rounded-lg font-medium transition-all"
+                            style="background: {{ boton.metodo_pago.color_boton }}; color: white;">
+                        {% if boton.metodo_pago.icono %}
+                        <i class="{{ boton.metodo_pago.icono }} text-lg"></i>
+                        {% else %}
+                        <i class="fas fa-credit-card text-lg"></i>
+                        {% endif %}
+                        <span>Pagar con {{ boton.metodo_pago.nombre }}</span>
+                    </button>
+                    {% empty %}
+                    <div class="text-center py-4 text-cosmic-400">
+                        <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                        <p class="text-sm">No hay métodos de pago disponibles en tu región</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endwith %}
+            {% endfor %}
+        </div>
+        
+        {% else %}
+        <!-- Estado sin paquetes -->
+        <div class="text-center py-16">
+            <div class="w-24 h-24 bg-cosmic-700/50 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i class="fas fa-coins text-3xl text-cosmic-400"></i>
+            </div>
+            <h3 class="font-mystical text-xl text-cosmic-200 mb-2">No hay paquetes disponibles</h3>
+            <p class="text-cosmic-400 mb-6">
+                Actualmente no hay paquetes de créditos disponibles en tu región.
+            </p>
+            <a href="{% url 'appWeb:home' %}" 
+               class="inline-flex items-center bg-primary-500 hover:bg-primary-600 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                <i class="fas fa-home mr-2"></i>
+                Volver al Inicio
+            </a>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Información Adicional -->
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mt-20">
+        <div class="bg-cosmic-800/50 backdrop-blur-sm rounded-2xl p-8 border border-cosmic-600">
+            <h3 class="font-mystical text-2xl font-bold text-cosmic-100 mb-6 text-center">
+                <i class="fas fa-info-circle mr-3 text-primary-400"></i>
+                Información sobre los Créditos
+            </h3>
+            
+            <div class="grid md:grid-cols-2 gap-8">
+                <div>
+                    <h4 class="font-semibold text-cosmic-200 mb-3">
+                        <i class="fas fa-shield-alt mr-2 text-green-400"></i>
+                        Seguridad y Privacidad
+                    </h4>
+                    <ul class="space-y-2 text-sm text-cosmic-300">
+                        <li>• Pagos procesados de forma segura</li>
+                        <li>• Datos protegidos con cifrado SSL</li>
+                        <li>• Sin almacenamiento de datos de tarjetas</li>
+                        <li>• Cumplimiento de estándares PCI</li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold text-cosmic-200 mb-3">
+                        <i class="fas fa-clock mr-2 text-gold-400"></i>
+                        Términos de Uso
+                    </h4>
+                    <ul class="space-y-2 text-sm text-cosmic-300">
+                        <li>• Los créditos no expiran nunca</li>
+                        <li>• No se pueden transferir entre cuentas</li>
+                        <li>• Válidos para todas las consultas de tarot</li>
+                        <li>• Reembolsos según política de la empresa</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="mt-8 text-center">
+                <p class="text-cosmic-400 text-sm">
+                    ¿Tienes preguntas? <a href="#" class="text-primary-400 hover:text-primary-300 transition-colors">Contacta nuestro soporte</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="loading-overlay">
+    <div class="text-center">
+        <div class="loading-spinner mx-auto mb-4"></div>
+        <p class="text-cosmic-100 text-lg">Procesando pago...</p>
+        <p class="text-cosmic-300 text-sm">No cierres esta ventana</p>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Variables globales
+let pagoEnProceso = false;
+
+// Función para iniciar el proceso de pago
+function iniciarPago(paqueteId, botonPagoId, metodoPago) {
+    if (pagoEnProceso) {
+        console.log('Pago ya en proceso...');
+        return;
+    }
+    
+    console.log('Iniciando pago:', { paqueteId, botonPagoId, metodoPago });
+    
+    // Mostrar loading
+    mostrarLoading();
+    pagoEnProceso = true;
+    
+    // Preparar datos para el API
+    const formData = new FormData();
+    formData.append('paquete_id', paqueteId);
+    formData.append('boton_pago_id', botonPagoId);
+    formData.append('pais_usuario', '{{ pais_usuario }}');
+    
+    // Obtener CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    // Realizar llamada al API
+    fetch('/api/billing/comprar-creditos/', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': csrfToken,
+        }
+    })
+    .then(response => {
+        console.log('Respuesta recibida:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Datos recibidos:', data);
+        
+        if (data.message) {
+            // Éxito - Mostrar mensaje y actualizar créditos
+            mostrarMensajeExito(data.message, data.creditos_agregados, data.creditos_totales);
+            
+            // Actualizar display de créditos en la página
+            const creditosDisplay = document.getElementById('creditos-actuales');
+            if (creditosDisplay) {
+                creditosDisplay.textContent = data.creditos_totales;
+            }
+            
+            // Actualizar créditos en navbar (si existe)
+            const navbarCreditos = document.querySelector('#creditos-display, #creditos-display-mobile');
+            if (navbarCreditos) {
+                navbarCreditos.textContent = data.creditos_totales;
+            }
+            
+        } else {
+            // Error
+            mostrarMensajeError(data.error || 'Error desconocido procesando el pago');
+        }
+    })
+    .catch(error => {
+        console.error('Error en la llamada:', error);
+        mostrarMensajeError('Error de conexión. Inténtalo de nuevo.');
+    })
+    .finally(() => {
+        ocultarLoading();
+        pagoEnProceso = false;
+    });
+}
+
+// Función para mostrar el overlay de loading
+function mostrarLoading() {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) {
+        overlay.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+// Función para ocultar el overlay de loading
+function ocultarLoading() {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) {
+        overlay.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+}
+
+// Función para mostrar mensaje de éxito
+function mostrarMensajeExito(mensaje, creditosAgregados, creditosTotales) {
+    // Crear modal de éxito dinámico
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+    modal.innerHTML = `
+        <div class="bg-cosmic-800 rounded-2xl border border-green-500/30 max-w-md w-full animate-pulse">
+            <div class="p-6 text-center">
+                <div class="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-check text-3xl text-green-400"></i>
+                </div>
+                <h3 class="font-mystical text-xl font-bold text-cosmic-100 mb-2">
+                    ¡Pago Exitoso!
+                </h3>
+                <p class="text-cosmic-300 text-sm mb-4 leading-relaxed">
+                    ${mensaje}
+                </p>
+                <div class="bg-gold-900/20 border border-gold-500/30 rounded-lg p-4 mb-6">
+                    <div class="text-gold-300 text-lg font-semibold">
+                        +${creditosAgregados} créditos agregados
+                    </div>
+                    <div class="text-cosmic-400 text-sm">
+                        Total: ${creditosTotales} créditos
+                    </div>
+                </div>
+            </div>
+            <div class="p-6 border-t border-cosmic-600 flex space-x-3">
+                <button onclick="this.closest('.fixed').remove()" 
+                        class="flex-1 bg-gradient-to-r from-green-500 to-primary-500 hover:from-green-600 hover:to-primary-600 text-white py-3 rounded-lg font-medium transition-all duration-300">
+                    <i class="fas fa-check mr-2"></i>Continuar
+                </button>
+                <a href="{% url 'appWeb:sets_list' %}" 
+                   class="flex-1 border border-gold-500 text-gold-400 hover:text-gold-300 hover:border-gold-400 py-3 rounded-lg font-medium text-center transition-colors">
+                    <i class="fas fa-magic mr-2"></i>Consultar Ahora
+                </a>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+// Función para mostrar mensaje de error
+function mostrarMensajeError(mensaje) {
+    // Crear modal de error dinámico
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+    modal.innerHTML = `
+        <div class="bg-cosmic-800 rounded-2xl border border-red-500/30 max-w-md w-full">
+            <div class="p-6 text-center">
+                <div class="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-exclamation-triangle text-3xl text-red-400"></i>
+                </div>
+                <h3 class="font-mystical text-xl font-bold text-cosmic-100 mb-2">
+                    Error en el Pago
+                </h3>
+                <p class="text-cosmic-300 text-sm mb-6 leading-relaxed">
+                    ${mensaje}
+                </p>
+            </div>
+            <div class="p-6 border-t border-cosmic-600">
+                <button onclick="this.closest('.fixed').remove()" 
+                        class="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white py-3 rounded-lg font-medium transition-all duration-300">
+                    <i class="fas fa-times mr-2"></i>Cerrar
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+// Agregar CSRF token a todas las llamadas AJAX
+document.addEventListener('DOMContentLoaded', function() {
+    // Agregar CSRF token si no existe
+    if (!document.querySelector('[name=csrfmiddlewaretoken]')) {
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = '{{ csrf_token }}';
+        document.body.appendChild(csrfInput);
+    }
+});
+</script>
+{% endblock %}

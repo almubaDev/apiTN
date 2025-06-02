@@ -22,6 +22,7 @@ urlpatterns = [
     # Créditos
     path('comprar-creditos/', views.comprar_creditos, name='comprar-creditos'),
     path('mis-transacciones/', views.mis_transacciones, name='mis-transacciones'),
+    path('paquetes-con-botones/', views.paquetes_con_botones, name='paquetes-con-botones'),
     
     # Historial y consultas
     path('mi-historial-consultas/', views.mi_historial_consultas, name='mi-historial-consultas'),
