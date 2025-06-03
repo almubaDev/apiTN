@@ -584,7 +584,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Iniciar proceso de consulta
+// Iniciar proceso de consulta - FUNCIÓN CORREGIDA
 function iniciarConsulta(tiradaId, tiradaNombre, tiradaCosto, tiradaImagen) {
     console.log('Iniciando consulta:', tiradaId, tiradaNombre, tiradaCosto);
     
@@ -596,35 +596,18 @@ function iniciarConsulta(tiradaId, tiradaNombre, tiradaCosto, tiradaImagen) {
         imagen: tiradaImagen || ''
     };
     
-    // Verificar créditos
-    var creditosElement = document.getElementById('creditos-disponibles');
-    if (!creditosElement) {
-        console.error('Elemento creditos-disponibles no encontrado');
-        alert('Error: No se pueden verificar los créditos disponibles');
-        return;
-    }
+    // ELIMINAR TODA LA VERIFICACIÓN DE CRÉDITOS AQUÍ
+    // Ir directamente al modal de consulta
+    document.getElementById('tiradaNombre').textContent = tiradaNombre;
+    document.getElementById('tiradaCosto').textContent = tiradaCosto;
     
-    var creditosDisponibles = parseInt(creditosElement.textContent) || 0;
-    console.log('Créditos disponibles:', creditosDisponibles);
+    var preguntaInput = document.getElementById('preguntaConsulta');
+    var contadorElement = document.getElementById('contadorCaracteres');
     
-    if (creditosDisponibles < tiradaCosto) {
-        // Mostrar modal de créditos insuficientes
-        document.getElementById('creditosNecesarios').textContent = tiradaCosto;
-        document.getElementById('creditosActuales').textContent = creditosDisponibles;
-        mostrarModal('modalCreditosInsuficientes');
-    } else {
-        // Mostrar modal de consulta
-        document.getElementById('tiradaNombre').textContent = tiradaNombre;
-        document.getElementById('tiradaCosto').textContent = tiradaCosto;
-        
-        var preguntaInput = document.getElementById('preguntaConsulta');
-        var contadorElement = document.getElementById('contadorCaracteres');
-        
-        if (preguntaInput) preguntaInput.value = '';
-        if (contadorElement) contadorElement.textContent = '0';
-        
-        mostrarModal('modalConsulta');
-    }
+    if (preguntaInput) preguntaInput.value = '';
+    if (contadorElement) contadorElement.textContent = '0';
+    
+    mostrarModal('modalConsulta');
 }
 
 // Realizar consulta
@@ -705,8 +688,8 @@ function realizarConsulta(e) {
         
         if (data.success) {
             mostrarResultado(data.resultado, pregunta);
-            // Actualizar créditos en la UI
-            var creditosElement = document.getElementById('creditos-disponibles');
+            // CORREGIDO: Actualizar créditos en la UI usando el ID correcto
+            var creditosElement = document.getElementById('creditos-display') || document.getElementById('creditos-display-mobile');
             if (creditosElement) {
                 creditosElement.textContent = data.creditos_restantes || 0;
             }
