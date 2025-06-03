@@ -601,6 +601,34 @@ def motor_nautica(request):
     return render(request, 'appWeb/motor_nautica.html', context)
 
 
+# NUEVAS VISTAS para páginas de retorno de pago
+def payment_success(request):
+    """Página de éxito del pago"""
+    payment_reference = request.GET.get('ref')
+    
+    context = {
+        'payment_reference': payment_reference,
+        'page_title': 'Pago Exitoso'
+    }
+    
+    return render(request, 'appWeb/payment/success.html', context)
+
+
+def payment_cancel(request):
+    """Página de pago cancelado"""
+    payment_reference = request.GET.get('ref')
+    
+    context = {
+        'payment_reference': payment_reference,
+        'page_title': 'Pago Cancelado'
+    }
+    
+    return render(request, 'appWeb/payment/cancel.html', context)
+
+
+
+
+
 # AJAX Views
 @login_required
 @require_http_methods(["GET"])

@@ -19,10 +19,18 @@ urlpatterns = [
     path('suscribirse/', views.suscribirse, name='suscribirse'),
     path('cancelar-suscripcion/', views.cancelar_suscripcion, name='cancelar-suscripcion'),
     
-    # Créditos
+    # Créditos - URLs existentes
     path('comprar-creditos/', views.comprar_creditos, name='comprar-creditos'),
     path('mis-transacciones/', views.mis_transacciones, name='mis-transacciones'),
     path('paquetes-con-botones/', views.paquetes_con_botones, name='paquetes-con-botones'),
+    
+    # NUEVAS URLs para flujo de pago externo
+    path('generar-url-pago/', views.generar_url_pago, name='generar-url-pago'),
+    path('verificar-pago/', views.verificar_pago, name='verificar-pago'),
+    
+    # Webhooks/confirmaciones de plataformas de pago
+    path('paypal-ipn/', views.paypal_ipn, name='paypal-ipn'),
+    path('flow-confirm/', views.flow_confirm, name='flow-confirm'),
     
     # Historial y consultas
     path('mi-historial-consultas/', views.mi_historial_consultas, name='mi-historial-consultas'),

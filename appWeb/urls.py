@@ -31,6 +31,10 @@ urlpatterns = [
     path('historial/', views.historial_consultas, name='historial_consultas'),
     path('motor-nautica/', views.motor_nautica, name='motor_nautica'),
     
+    # NUEVAS URLs para páginas de retorno de pago
+    path('payment/success/', views.payment_success, name='payment_success'),
+    path('payment/cancel/', views.payment_cancel, name='payment_cancel'),
+    
     # AJAX endpoints
     path('ajax/verificar-creditos/', views.verificar_creditos, name='verificar_creditos'),
     path('ajax/procesar-pago/', views.procesar_pago, name='procesar_pago'),

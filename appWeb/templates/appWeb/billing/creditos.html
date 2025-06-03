@@ -321,7 +321,7 @@
 <div id="loadingOverlay" class="loading-overlay">
     <div class="text-center">
         <div class="loading-spinner mx-auto mb-4"></div>
-        <p class="text-cosmic-100 text-lg">Procesando pago...</p>
+        <p class="text-cosmic-100 text-lg">Redirigiendo a la plataforma de pago...</p>
         <p class="text-cosmic-300 text-sm">No cierres esta ventana</p>
     </div>
 </div>
@@ -333,7 +333,7 @@
 // Variables globales
 let pagoEnProceso = false;
 
-// Función para iniciar el proceso de pago
+// FUNCIÓN MODIFICADA: Ahora redirige a plataforma de pago en lugar de simular
 function iniciarPago(paqueteId, botonPagoId, metodoPago) {
     if (pagoEnProceso) {
         console.log('Pago ya en proceso...');
@@ -355,8 +355,8 @@ function iniciarPago(paqueteId, botonPagoId, metodoPago) {
     // Obtener CSRF token
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
     
-    // Realizar llamada al API
-    fetch('/api/billing/comprar-creditos/', {
+    // CAMBIO PRINCIPAL: Llamar al nuevo endpoint para generar URL de pago
+    fetch('/api/billing/generar-url-pago/', {
         method: 'POST',
         body: formData,
         headers: {
@@ -370,25 +370,14 @@ function iniciarPago(paqueteId, botonPagoId, metodoPago) {
     .then(data => {
         console.log('Datos recibidos:', data);
         
-        if (data.message) {
-            // Éxito - Mostrar mensaje y actualizar créditos
-            mostrarMensajeExito(data.message, data.creditos_agregados, data.creditos_totales);
-            
-            // Actualizar display de créditos en la página
-            const creditosDisplay = document.getElementById('creditos-actuales');
-            if (creditosDisplay) {
-                creditosDisplay.textContent = data.creditos_totales;
-            }
-            
-            // Actualizar créditos en navbar (si existe)
-            const navbarCreditos = document.querySelector('#creditos-display, #creditos-display-mobile');
-            if (navbarCreditos) {
-                navbarCreditos.textContent = data.creditos_totales;
-            }
+        if (data.success) {
+            // REDIRIGIR a la plataforma de pago externa
+            console.log('Redirigiendo a:', data.payment_url);
+            window.location.href = data.payment_url;
             
         } else {
             // Error
-            mostrarMensajeError(data.error || 'Error desconocido procesando el pago');
+            mostrarMensajeError(data.error || 'Error generando URL de pago');
         }
     })
     .catch(error => {
@@ -419,48 +408,7 @@ function ocultarLoading() {
     }
 }
 
-// Función para mostrar mensaje de éxito
-function mostrarMensajeExito(mensaje, creditosAgregados, creditosTotales) {
-    // Crear modal de éxito dinámico
-    const modal = document.createElement('div');
-    modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
-    modal.innerHTML = `
-        <div class="bg-cosmic-800 rounded-2xl border border-green-500/30 max-w-md w-full animate-pulse">
-            <div class="p-6 text-center">
-                <div class="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i class="fas fa-check text-3xl text-green-400"></i>
-                </div>
-                <h3 class="font-mystical text-xl font-bold text-cosmic-100 mb-2">
-                    ¡Pago Exitoso!
-                </h3>
-                <p class="text-cosmic-300 text-sm mb-4 leading-relaxed">
-                    ${mensaje}
-                </p>
-                <div class="bg-gold-900/20 border border-gold-500/30 rounded-lg p-4 mb-6">
-                    <div class="text-gold-300 text-lg font-semibold">
-                        +${creditosAgregados} créditos agregados
-                    </div>
-                    <div class="text-cosmic-400 text-sm">
-                        Total: ${creditosTotales} créditos
-                    </div>
-                </div>
-            </div>
-            <div class="p-6 border-t border-cosmic-600 flex space-x-3">
-                <button onclick="this.closest('.fixed').remove()" 
-                        class="flex-1 bg-gradient-to-r from-green-500 to-primary-500 hover:from-green-600 hover:to-primary-600 text-white py-3 rounded-lg font-medium transition-all duration-300">
-                    <i class="fas fa-check mr-2"></i>Continuar
-                </button>
-                <a href="{% url 'appWeb:sets_list' %}" 
-                   class="flex-1 border border-gold-500 text-gold-400 hover:text-gold-300 hover:border-gold-400 py-3 rounded-lg font-medium text-center transition-colors">
-                    <i class="fas fa-magic mr-2"></i>Consultar Ahora
-                </a>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(modal);
-}
-
-// Función para mostrar mensaje de error
+// FUNCIONES DE MENSAJES DE ERROR (simplificadas ya que principalmente redirigimos)
 function mostrarMensajeError(mensaje) {
     // Crear modal de error dinámico
     const modal = document.createElement('div');
