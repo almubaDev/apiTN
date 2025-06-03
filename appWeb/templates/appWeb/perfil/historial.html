@@ -30,7 +30,7 @@
     }
     
     .consulta-expandida {
-        max-height: 1000px;
+        max-height: none;
         transition: max-height 0.5s ease-in-out;
     }
     
@@ -40,33 +40,99 @@
         transition: max-height 0.3s ease-in-out;
     }
     
+    /* Estilos para el contenido markdown procesado */
     .interpretacion-content {
-        line-height: 1.7;
+        line-height: 1.8;
+        overflow-wrap: break-word;
+        word-wrap: break-word;
     }
-    
+
     .interpretacion-content h1,
     .interpretacion-content h2,
     .interpretacion-content h3,
     .interpretacion-content h4 {
         color: #e0d4f7;
         font-weight: 600;
-        margin: 1rem 0 0.5rem 0;
+        margin: 1.5rem 0 1rem 0;
         font-family: 'Cinzel', serif;
     }
-    
+
+    .interpretacion-content h1 {
+        font-size: 1.5rem;
+        border-bottom: 2px solid #8b5cf6;
+        padding-bottom: 0.5rem;
+    }
+
+    .interpretacion-content h2 {
+        font-size: 1.3rem;
+        color: #c4b5fd;
+    }
+
+    .interpretacion-content h3 {
+        font-size: 1.2rem;
+        color: #ddd6fe;
+    }
+
+    .interpretacion-content h4 {
+        font-size: 1.1rem;
+        color: #e0d4f7;
+    }
+
     .interpretacion-content p {
-        margin: 0.5rem 0;
+        margin: 1rem 0;
         color: #cbd5e1;
     }
-    
+
     .interpretacion-content strong {
         color: #fbbf24;
         font-weight: 600;
     }
-    
+
     .interpretacion-content em {
         color: #d946ef;
         font-style: italic;
+    }
+
+    .interpretacion-content ul,
+    .interpretacion-content ol {
+        margin: 1rem 0;
+        padding-left: 1.5rem;
+        color: #cbd5e1;
+    }
+
+    .interpretacion-content li {
+        margin: 0.5rem 0;
+    }
+
+    /* Fade effect para contenido cortado */
+    .interpretacion-preview {
+        max-height: 200px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .interpretacion-preview::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 40px;
+        background: linear-gradient(transparent, #1e293b);
+        pointer-events: none;
+    }
+
+    .interpretacion-full {
+        max-height: none;
+    }
+
+    /* Loading state para interpretaciones */
+    .interpretacion-loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        color: #8b5cf6;
     }
 </style>
 {% endblock %}
@@ -113,7 +179,7 @@
                 {% with consultas|first as ultima_consulta %}
                     {% if ultima_consulta %}
                         <div class="text-3xl font-bold text-gold-400 mb-2">{{ ultima_consulta.created_at|timesince }}</div>
-                        <div class="text-cosmic-300">Última Consulta</div>
+                        <div class="text-cosmic-300">Desde tu Última Consulta</div>
                     {% else %}
                         <div class="text-3xl font-bold text-gold-400 mb-2">-</div>
                         <div class="text-cosmic-300">Sin Consultas</div>
@@ -226,14 +292,27 @@
                         </div>
                     </div>
 
-                    <!-- Interpretación -->
+                    <!-- Interpretación procesada con JavaScript -->
                     <div class="p-6">
                         <h4 class="font-semibold text-cosmic-200 mb-4 flex items-center">
                             <i class="fas fa-crystal-ball mr-2 text-mystic-400"></i>
                             Interpretación Mística
                         </h4>
-                        <div class="interpretacion-content bg-cosmic-900/50 rounded-lg p-4 border border-cosmic-600">
-                            {{ consulta.interpretacion|linebreaksbr }}
+                        
+                        <!-- Preview de interpretación (para estado colapsado) -->
+                        <div class="interpretacion-preview" id="preview-{{ forloop.counter }}">
+                            <div class="interpretacion-content bg-cosmic-900/50 rounded-lg p-4 border border-cosmic-600"
+                                 data-markdown="{{ consulta.interpretacion|slice:':400' }}...">
+                                <!-- Se llena con JavaScript -->
+                            </div>
+                        </div>
+                        
+                        <!-- Interpretación completa (para estado expandido) -->
+                        <div class="interpretacion-full hidden" id="full-{{ forloop.counter }}">
+                            <div class="interpretacion-content bg-cosmic-900/50 rounded-lg p-4 border border-cosmic-600"
+                                 data-markdown="{{ consulta.interpretacion }}">
+                                <!-- Se llena con JavaScript -->
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -244,18 +323,11 @@
                             class="text-primary-400 hover:text-primary-300 transition-colors text-sm font-medium"
                             id="toggle-btn-{{ forloop.counter }}">
                         <i class="fas fa-chevron-down mr-2" id="toggle-icon-{{ forloop.counter }}"></i>
-                        <span id="toggle-text-{{ forloop.counter }}">Ver Detalles Completos</span>
+                        <span id="toggle-text-{{ forloop.counter }}">Ver Interpretación Completa</span>
                     </button>
                 </div>
             </div>
             {% endfor %}
-        </div>
-
-        <!-- Paginación placeholders si necesitas más adelante -->
-        <div class="mt-12 text-center">
-            <p class="text-cosmic-400 text-sm">
-                Mostrando las últimas {{ consultas|length }} consultas
-            </p>
         </div>
 
         {% else %}
@@ -290,8 +362,52 @@
 
 {% block extra_js %}
 <script>
+// COPIADO DE mazo.html - Función para procesar markdown
+function parseMarkdown(text) {
+    // Procesar títulos
+    text = text.replace(/^### (.*$)/gm, '<h3>$1</h3>');
+    text = text.replace(/^## (.*$)/gm, '<h2>$1</h2>');
+    text = text.replace(/^# (.*$)/gm, '<h1>$1</h1>');
+    
+    // Procesar negritas
+    text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    
+    // Procesar cursivas
+    text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    
+    // Procesar saltos de línea dobles como párrafos
+    text = text.replace(/\n\n/g, '</p><p>');
+    text = '<p>' + text + '</p>';
+    
+    // Limpiar párrafos vacíos
+    text = text.replace(/<p><\/p>/g, '');
+    text = text.replace(/<p>\s*<\/p>/g, '');
+    
+    // Procesar listas
+    text = text.replace(/^\- (.*$)/gm, '<li>$1</li>');
+    text = text.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+    
+    // Procesar saltos de línea simples
+    text = text.replace(/\n/g, '<br>');
+    
+    return text;
+}
+
+// Procesar todo el markdown cuando la página carga
+document.addEventListener('DOMContentLoaded', function() {
+    // Procesar todas las interpretaciones
+    document.querySelectorAll('[data-markdown]').forEach(function(element) {
+        const markdownText = element.getAttribute('data-markdown');
+        if (markdownText) {
+            element.innerHTML = parseMarkdown(markdownText);
+        }
+    });
+});
+
 function toggleConsulta(index) {
     const consulta = document.getElementById(`consulta-${index}`);
+    const preview = document.getElementById(`preview-${index}`);
+    const full = document.getElementById(`full-${index}`);
     const icon = document.getElementById(`toggle-icon-${index}`);
     const text = document.getElementById(`toggle-text-${index}`);
     
@@ -299,6 +415,8 @@ function toggleConsulta(index) {
         // Expandir
         consulta.classList.remove('consulta-colapsada');
         consulta.classList.add('consulta-expandida');
+        preview.classList.add('hidden');
+        full.classList.remove('hidden');
         icon.classList.remove('fa-chevron-down');
         icon.classList.add('fa-chevron-up');
         text.textContent = 'Ocultar Detalles';
@@ -306,32 +424,14 @@ function toggleConsulta(index) {
         // Colapsar
         consulta.classList.remove('consulta-expandida');
         consulta.classList.add('consulta-colapsada');
+        preview.classList.remove('hidden');
+        full.classList.add('hidden');
         icon.classList.remove('fa-chevron-up');
         icon.classList.add('fa-chevron-down');
-        text.textContent = 'Ver Detalles Completos';
+        text.textContent = 'Ver Interpretación Completa';
         
         // Scroll suave al header de la consulta
         consulta.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-}
-
-// Opcional: Auto-colapsar otras consultas cuando se expande una nueva
-function autoCollapseOthers(currentIndex) {
-    const totalConsultas = {{ consultas|length }};
-    for (let i = 1; i <= totalConsultas; i++) {
-        if (i !== currentIndex) {
-            const consulta = document.getElementById(`consulta-${i}`);
-            const icon = document.getElementById(`toggle-icon-${i}`);
-            const text = document.getElementById(`toggle-text-${i}`);
-            
-            if (consulta && consulta.classList.contains('consulta-expandida')) {
-                consulta.classList.remove('consulta-expandida');
-                consulta.classList.add('consulta-colapsada');
-                icon.classList.remove('fa-chevron-up');
-                icon.classList.add('fa-chevron-down');
-                text.textContent = 'Ver Detalles Completos';
-            }
-        }
     }
 }
 </script>

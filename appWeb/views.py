@@ -1,5 +1,8 @@
 import requests
 import json
+from datetime import datetime
+from django.utils.dateparse import parse_datetime
+from django.utils import timezone
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
@@ -10,6 +13,40 @@ from django.conf import settings
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from .forms import LoginForm, RegisterForm, ProfileForm, ConsultaTarotForm, ContactForm
+
+
+def process_api_dates(data, date_fields=['created_at', 'updated_at', 'date_joined', 'last_login']):
+    """
+    Convierte campos de fecha de string a datetime objects en datos de API
+    
+    Args:
+        data: dict o list - datos de la API
+        date_fields: list - nombres de campos que contienen fechas
+    
+    Returns:
+        Los mismos datos pero con fechas convertidas
+    """
+    if isinstance(data, list):
+        return [process_api_dates(item, date_fields) for item in data]
+    
+    if isinstance(data, dict):
+        processed_data = data.copy()
+        for field in date_fields:
+            if field in processed_data and isinstance(processed_data[field], str):
+                try:
+                    # Parse the ISO format datetime string
+                    dt = parse_datetime(processed_data[field])
+                    if dt:
+                        # Si la fecha no tiene timezone, agregar UTC
+                        if timezone.is_naive(dt):
+                            dt = timezone.make_aware(dt)
+                        processed_data[field] = dt
+                except (ValueError, TypeError):
+                    # Si hay error parseando, mantener el string original
+                    pass
+        return processed_data
+    
+    return data
 
 
 class APIClient:
@@ -261,8 +298,6 @@ def mazo_detail(request, mazo_id):
     return render(request, 'appWeb/mazos/detail.html', context)
 
 
-# En appWeb/views.py - Solo la parte que cambia en consulta_mazo
-
 @login_required
 def consulta_mazo(request, mazo_id):
     """
@@ -355,6 +390,7 @@ def consulta_mazo(request, mazo_id):
     
     return render(request, 'appWeb/consulta/mazo.html', context)
 
+
 @login_required
 def consulta_tarot(request, tirada_id):
     """Realizar consulta de tarot"""
@@ -436,6 +472,11 @@ def perfil(request):
     wallet_data = api.get('/billing/mi-wallet/')
     estadisticas = api.get('/billing/estadisticas/')
     
+    # Procesar fechas en todos los datos
+    user_data = process_api_dates(user_data)
+    wallet_data = process_api_dates(wallet_data)
+    estadisticas = process_api_dates(estadisticas)
+    
     form = ProfileForm(instance=request.user.profile if hasattr(request.user, 'profile') else None)
     
     if request.method == 'POST':
@@ -464,6 +505,7 @@ def perfil(request):
     }
     
     return render(request, 'appWeb/perfil/index.html', context)
+
 
 @login_required
 def editar_perfil(request):
@@ -506,6 +548,7 @@ def editar_perfil(request):
     }
     
     return render(request, 'appWeb/perfil/editar.html', context)
+
 
 @login_required
 @require_http_methods(["POST"])
@@ -558,6 +601,7 @@ def cambiar_password(request):
             'error': f'Error de conexión: {str(e)}'
         })
 
+
 @login_required
 def comprar_creditos(request):
     """Página para comprar créditos"""
@@ -584,8 +628,11 @@ def historial_consultas(request):
     api = APIClient(request)
     consultas_data = api.get('/billing/mi-historial-consultas/')
     
+    # Procesar fechas en los datos de la API
+    consultas_procesadas = process_api_dates(consultas_data)
+    
     context = {
-        'consultas': consultas_data or [],
+        'consultas': consultas_procesadas or [],
         'page_title': 'Tu Viaje Místico'
     }
     
@@ -624,9 +671,6 @@ def payment_cancel(request):
     }
     
     return render(request, 'appWeb/payment/cancel.html', context)
-
-
-
 
 
 # AJAX Views
