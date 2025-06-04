@@ -146,14 +146,17 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+# STATICFILES_DIRS debe estar SIEMPRE (para collectstatic)
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
+
 if IS_PRODUCTION:
-    # PRODUCCIÓN: Carpeta específica para collectstatic
+    # PRODUCCIÓN: Solo STATIC_ROOT para collectstatic
     STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-else:
-    # DESARROLLO: Carpetas adicionales
-    STATICFILES_DIRS = [
-        os.path.join(BASE_DIR, 'static'),
-    ]
+    # En producción NO se puede tener STATICFILES_DIRS Y STATIC_ROOT al mismo tiempo
+    # durante el servido, pero sí durante collectstatic
+
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
