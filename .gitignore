@@ -21,7 +21,7 @@ lib64/
 venv/
 env/
 .env
-
+.env.production
 # Django
 *.log
 *.pot
