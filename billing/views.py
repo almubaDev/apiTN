@@ -517,56 +517,59 @@ def resumen_billing(request):
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
 def procesar_consulta_tarot(request):
-    """
-    Procesar el pago/descuento de una consulta de tarot
-    """
-    costo_creditos = request.data.get('costo_creditos', 0)
+    print(">>> [DEBUG] Entrando a procesar_consulta_tarot")
+
+    try:
+        costo_creditos = int(request.data.get('costo_creditos', 0))
+    except ValueError:
+        return Response({'error': 'Costo inválido'}, status=status.HTTP_400_BAD_REQUEST)
+
     tirada_info = request.data.get('tirada_info', {})
     pregunta = request.data.get('pregunta', '')
     interpretacion = request.data.get('interpretacion', '')
     cartas_resultado = request.data.get('cartas_resultado', [])
-    
+
     user = request.user
     wallet, created = Wallet.objects.get_or_create(user=user)
-    
-    # Verificar si tiene suscripción activa con tiradas disponibles
+    print(f">>> [DEBUG] Créditos antes: {wallet.creditos_disponibles}")
+
     suscripcion_activa = Suscripcion.objects.filter(
         user=user,
         estado='activa'
     ).first()
-    
+
     uso_suscripcion = False
-    
+
     try:
         with transaction.atomic():
-            # Priorizar uso de suscripción si está disponible
             if suscripcion_activa and suscripcion_activa.tiradas_disponibles() > 0:
                 if suscripcion_activa.usar_tirada():
                     uso_suscripcion = True
                     costo_final = 0
+                    print(">>> [DEBUG] Usando tirada de suscripción")
                 else:
                     return Response({
                         'error': 'Error usando tirada de suscripción'
                     }, status=status.HTTP_400_BAD_REQUEST)
             else:
-                # Usar créditos
                 if not wallet.tiene_creditos_suficientes(costo_creditos):
+                    print(">>> [DEBUG] Créditos insuficientes")
                     return Response({
                         'error': 'Créditos insuficientes'
                     }, status=status.HTTP_400_BAD_REQUEST)
-                
+
                 wallet.descontar_creditos(costo_creditos)
+                print(">>> [DEBUG] Créditos después: ", wallet.creditos_disponibles)
                 costo_final = costo_creditos
-                
-                # Crear transacción de uso de créditos
+
                 TransaccionCreditos.objects.create(
                     user=user,
                     tipo='uso',
                     cantidad=costo_creditos,
                     descripcion=f'Consulta de tarot - {tirada_info.get("nombre", "Tirada")}'
                 )
-            
-            # Guardar en historial
+                print(">>> [DEBUG] Transacción registrada")
+
             HistorialConsultas.objects.create(
                 user=user,
                 pregunta=pregunta,
@@ -577,7 +580,9 @@ def procesar_consulta_tarot(request):
                 interpretacion=interpretacion,
                 cartas_resultado=cartas_resultado
             )
-        
+
+            print(">>> [DEBUG] Consulta registrada en historial")
+
         return Response({
             'message': 'Consulta procesada exitosamente',
             'uso_suscripcion': uso_suscripcion,
@@ -585,8 +590,9 @@ def procesar_consulta_tarot(request):
             'creditos_restantes': wallet.creditos_disponibles,
             'tiradas_restantes_suscripcion': suscripcion_activa.tiradas_disponibles() if suscripcion_activa else 0
         }, status=status.HTTP_200_OK)
-        
+
     except Exception as e:
+        print(">>> [ERROR] Excepción procesando consulta:", str(e))
         return Response({
             'error': f'Error procesando consulta: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
