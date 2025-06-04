@@ -53,7 +53,7 @@ class APIClient:
     """Cliente para consumir nuestra propia API"""
 
     def __init__(self, request=None):
-        self.base_url = 'https://www.tarotnautica.store//api'
+        self.base_url = 'http://127.0.0.1:8000/api'
         self.request = request
 
     def _get_headers(self):
@@ -402,7 +402,7 @@ def consulta_mazo(request, mazo_id):
 
 @login_required
 def consulta_tarot(request, tirada_id):
-    """Realizar consulta de tarot"""
+    """Realizar consulta de tarot (requiere descontar créditos o usar suscripción)"""
     api = APIClient(request)
     tirada_data = api.get(f'/oraculo/tiradas/{tirada_id}/')
 
@@ -430,9 +430,28 @@ def consulta_tarot(request, tirada_id):
                 })
 
                 if consulta_response and consulta_response.status_code == 200:
-                    # Guardar resultado en sesión y redirigir
-                    request.session['consulta_resultado'] = consulta_response.json()
-                    return redirect('appWeb:resultado_consulta', tirada_id=tirada_id)
+                    resultado = consulta_response.json()
+
+                    # ✅ Descontar créditos o registrar tirada por suscripción
+                    billing_response = api.post('/billing/procesar-consulta-tarot/', {
+                        'costo_creditos': costo,
+                        'tirada_info': {
+                            'nombre': tirada_data.get('nombre'),
+                            'descripcion': tirada_data.get('descripcion'),
+                            'mazo_nombre': tirada_data['mazo']['nombre'],
+                            'cantidad_cartas': tirada_data.get('cantidad_cartas'),
+                        },
+                        'pregunta': form.cleaned_data['pregunta'],
+                        'interpretacion': resultado.get('interpretacion_ia', ''),
+                        'cartas_resultado': resultado.get('cartas', [])
+                    })
+
+                    if billing_response and billing_response.status_code == 200:
+                        # Guardar resultado en sesión y redirigir
+                        request.session['consulta_resultado'] = resultado
+                        return redirect('appWeb:resultado_consulta', tirada_id=tirada_id)
+                    else:
+                        messages.error(request, 'La consulta se generó pero no se pudo registrar el cobro.')
                 else:
                     messages.error(request, 'Error al procesar la consulta. Inténtalo de nuevo.')
             else:
