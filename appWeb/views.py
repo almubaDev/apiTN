@@ -18,17 +18,17 @@ from .forms import LoginForm, RegisterForm, ProfileForm, ConsultaTarotForm, Cont
 def process_api_dates(data, date_fields=['created_at', 'updated_at', 'date_joined', 'last_login']):
     """
     Convierte campos de fecha de string a datetime objects en datos de API
-    
+
     Args:
         data: dict o list - datos de la API
         date_fields: list - nombres de campos que contienen fechas
-    
+
     Returns:
         Los mismos datos pero con fechas convertidas
     """
     if isinstance(data, list):
         return [process_api_dates(item, date_fields) for item in data]
-    
+
     if isinstance(data, dict):
         processed_data = data.copy()
         for field in date_fields:
@@ -45,17 +45,17 @@ def process_api_dates(data, date_fields=['created_at', 'updated_at', 'date_joine
                     # Si hay error parseando, mantener el string original
                     pass
         return processed_data
-    
+
     return data
 
 
 class APIClient:
     """Cliente para consumir nuestra propia API"""
-    
+
     def __init__(self, request=None):
-        self.base_url = 'http://localhost:8000/api'
+        self.base_url = 'https://www.tarotnautica.store/api'
         self.request = request
-    
+
     def _get_headers(self):
         """Obtener headers para las requests, incluyendo token si está autenticado"""
         headers = {'Content-Type': 'application/json'}
@@ -66,7 +66,7 @@ class APIClient:
             except:
                 pass
         return headers
-    
+
     def get(self, endpoint, params=None):
         """Hacer GET request a la API"""
         try:
@@ -78,7 +78,7 @@ class APIClient:
             return response.json() if response.status_code == 200 else None
         except:
             return None
-    
+
     def post(self, endpoint, data=None):
         """Hacer POST request a la API"""
         try:
@@ -95,22 +95,22 @@ class APIClient:
 def home(request):
     """Página principal"""
     api = APIClient(request)
-    
+
     # Obtener algunos sets destacados para mostrar en home
     sets_data = api.get('/oraculo/sets-con-mazos/')
-    
+
     # Calcular total de mazos de todos los sets
     total_mazos = 0
     if sets_data:
         for set_item in sets_data:
             total_mazos += len(set_item.get('mazos', []))
-    
+
     context = {
         'sets': sets_data[:3] if sets_data else [],  # Solo los primeros 3 para el home
         'total_mazos': total_mazos,  # Total de mazos disponibles
         'user_authenticated': request.user.is_authenticated,
     }
-    
+
     return render(request, 'appWeb/home.html', context)
 
 
@@ -118,23 +118,23 @@ def login_view(request):
     """Vista de login"""
     if request.user.is_authenticated:
         return redirect('appWeb:home')
-    
+
     form = LoginForm()
-    
+
     if request.method == 'POST':
         form = LoginForm(request.POST)
         if form.is_valid():
             email = form.cleaned_data['email']
             password = form.cleaned_data['password']
             remember_me = form.cleaned_data.get('remember_me', False)
-            
+
             # Autenticar usando nuestra API
             api = APIClient(request)
             api_response = api.post('/users/login/', {
                 'email': email,
                 'password': password
             })
-            
+
             if api_response and api_response.status_code == 200:
                 # Login exitoso en API, ahora hacer login en Django
                 user = authenticate(request, username=email, password=password)
@@ -142,13 +142,13 @@ def login_view(request):
                     login(request, user)
                     if not remember_me:
                         request.session.set_expiry(0)  # Cerrar al cerrar navegador
-                    
+
                     messages.success(request, '¡Bienvenido de vuelta, místico viajero!')
                     next_url = request.GET.get('next', 'appWeb:home')
                     return redirect(next_url)
-            
+
             messages.error(request, 'Credenciales incorrectas. Inténtalo de nuevo.')
-    
+
     return render(request, 'appWeb/auth/login.html', {'form': form})
 
 
@@ -156,9 +156,9 @@ def register_view(request):
     """Vista de registro"""
     if request.user.is_authenticated:
         return redirect('appWeb:home')
-    
+
     form = RegisterForm()
-    
+
     if request.method == 'POST':
         form = RegisterForm(request.POST)
         if form.is_valid():
@@ -170,7 +170,7 @@ def register_view(request):
                 'password': form.cleaned_data['password1'],
                 'password_confirm': form.cleaned_data['password2']
             })
-            
+
             if api_response and api_response.status_code == 201:
                 # Usuario creado exitosamente, ahora hacer login automático
                 user = authenticate(request, username=form.cleaned_data['email'], password=form.cleaned_data['password1'])
@@ -191,7 +191,7 @@ def register_view(request):
                             messages.error(request, f'{field}: {errors}')
                 except:
                     messages.error(request, 'Error al crear la cuenta. Inténtalo de nuevo.')
-    
+
     return render(request, 'appWeb/auth/register.html', {'form': form})
 
 
@@ -201,7 +201,7 @@ def logout_view(request):
         # Logout en API también
         api = APIClient(request)
         api.post('/users/logout/')
-    
+
     logout(request)
     messages.info(request, 'Has cerrado sesión. ¡Hasta pronto!')
     return redirect('appWeb:home')
@@ -211,30 +211,30 @@ def sets_list(request):
     """Lista de sets de mazos"""
     api = APIClient(request)
     sets_data = api.get('/oraculo/sets-con-mazos/')
-    
+
     context = {
         'sets': sets_data or [],
         'page_title': 'Explora los Misterios del Tarot'
     }
-    
+
     return render(request, 'appWeb/sets/list.html', context)
 
 
 def mazos_list(request):
     """Lista de mazos con filtros por sets"""
     import random
-    
+
     api = APIClient(request)
-    
+
     # Obtener todos los sets para el filtro
     sets_data = api.get('/oraculo/sets/')
-    
+
     # Obtener mazos con información básica
     mazos_data = api.get('/oraculo/mazos/')
-    
+
     # Obtener filtros de la URL
     set_ids = request.GET.getlist('sets')  # Para filtros múltiples por checkbox
-    
+
     # Filtrar mazos por sets seleccionados si hay filtros
     if set_ids:
         mazos_filtrados = []
@@ -242,7 +242,7 @@ def mazos_list(request):
             if str(mazo.get('set')) in set_ids:
                 mazos_filtrados.append(mazo)
         mazos_data = mazos_filtrados
-    
+
     # Obtener una carta aleatoria para cada mazo
     if mazos_data:
         for mazo in mazos_data:
@@ -253,14 +253,14 @@ def mazos_list(request):
                 mazo['carta_aleatoria'] = carta_aleatoria
             else:
                 mazo['carta_aleatoria'] = None
-    
+
     context = {
         'mazos': mazos_data or [],
         'sets': sets_data or [],
         'selected_sets': set_ids,
         'page_title': 'Mazos Místicos'
     }
-    
+
     return render(request, 'appWeb/mazos/list.html', context)
 
 
@@ -268,16 +268,16 @@ def set_detail(request, set_id):
     """Detalle de un set específico"""
     api = APIClient(request)
     set_data = api.get(f'/oraculo/sets-con-mazos/{set_id}/')
-    
+
     if not set_data:
         messages.error(request, 'Set no encontrado.')
         return redirect('appWeb:sets_list')
-    
+
     context = {
         'set': set_data,
         'page_title': set_data.get('nombre', 'Set de Tarot')
     }
-    
+
     return render(request, 'appWeb/sets/detail.html', context)
 
 
@@ -285,16 +285,16 @@ def mazo_detail(request, mazo_id):
     """Detalle de un mazo específico"""
     api = APIClient(request)
     mazo_data = api.get(f'/oraculo/mazos-con-tiradas/{mazo_id}/')
-    
+
     if not mazo_data:
         messages.error(request, 'Mazo no encontrado.')
         return redirect('appWeb:sets_list')
-    
+
     context = {
         'mazo': mazo_data,
         'page_title': mazo_data.get('nombre', 'Mazo de Tarot')
     }
-    
+
     return render(request, 'appWeb/mazos/detail.html', context)
 
 
@@ -304,28 +304,28 @@ def consulta_mazo(request, mazo_id):
     Vista para consulta de tiradas de un mazo específico
     """
     api = APIClient(request)
-    
+
     # Obtener mazo con sus tiradas
     mazo_data = api.get(f'/oraculo/mazos-con-tiradas/{mazo_id}/')
-    
+
     if not mazo_data:
         messages.error(request, 'Mazo no encontrado.')
         return redirect('appWeb:mazos_list')
-    
+
     # Obtener información de créditos del usuario
     wallet_data = api.get('/billing/mi-wallet/')
-    
+
     # Si es POST, manejar la consulta AJAX
     if request.method == 'POST':
         tirada_id = request.POST.get('tirada_id')
         pregunta = request.POST.get('pregunta')
-        
+
         if not tirada_id or not pregunta:
             return JsonResponse({
                 'success': False,
                 'error': 'Datos incompletos'
             })
-        
+
         # CAMBIO: Obtener datos completos de la tirada
         tirada_data = api.get(f'/oraculo/tiradas/{tirada_id}/')
         if not tirada_data:
@@ -333,9 +333,9 @@ def consulta_mazo(request, mazo_id):
                 'success': False,
                 'error': 'Tirada no encontrada'
             })
-        
+
         costo = tirada_data.get('costo', 1)
-        
+
         # Verificar créditos
         if not wallet_data or wallet_data.get('creditos_disponibles', 0) < costo:
             return JsonResponse({
@@ -344,7 +344,7 @@ def consulta_mazo(request, mazo_id):
                 'creditos_necesarios': costo,
                 'creditos_disponibles': wallet_data.get('creditos_disponibles', 0) if wallet_data else 0
             })
-        
+
         # Realizar consulta - AHORA incluye toda la información de la tirada
         consulta_response = api.post('/oraculo/consulta-tarot/', {
             'pregunta': pregunta,
@@ -352,10 +352,10 @@ def consulta_mazo(request, mazo_id):
             'mazo_id': mazo_id,
             'tirada_id': tirada_id
         })
-        
+
         if consulta_response and consulta_response.status_code == 200:
             resultado = consulta_response.json()
-            
+
             # Procesar el pago de la consulta con información completa de la tirada
             billing_response = api.post('/billing/procesar-consulta-tarot/', {
                 'costo_creditos': costo,
@@ -369,7 +369,7 @@ def consulta_mazo(request, mazo_id):
                 'interpretacion': resultado.get('interpretacion_ia', ''),
                 'cartas_resultado': resultado.get('cartas', [])
             })
-            
+
             return JsonResponse({
                 'success': True,
                 'resultado': resultado,
@@ -380,14 +380,14 @@ def consulta_mazo(request, mazo_id):
                 'success': False,
                 'error': 'Error al procesar la consulta. Inténtalo de nuevo.'
             })
-    
+
     # GET: Mostrar página de consulta
     context = {
         'mazo': mazo_data,
         'wallet': wallet_data,
         'page_title': f'Consulta con {mazo_data.get("nombre", "Mazo")}'
     }
-    
+
     return render(request, 'appWeb/consulta/mazo.html', context)
 
 
@@ -396,17 +396,17 @@ def consulta_tarot(request, tirada_id):
     """Realizar consulta de tarot"""
     api = APIClient(request)
     tirada_data = api.get(f'/oraculo/tiradas/{tirada_id}/')
-    
+
     if not tirada_data:
         messages.error(request, 'Tirada no encontrada.')
         return redirect('appWeb:sets_list')
-    
+
     # Verificar si tiene créditos suficientes
     wallet_data = api.get('/billing/mi-wallet/')
     costo = tirada_data.get('costo', 1)
-    
+
     form = ConsultaTarotForm()
-    
+
     if request.method == 'POST':
         form = ConsultaTarotForm(request.POST)
         if form.is_valid():
@@ -419,7 +419,7 @@ def consulta_tarot(request, tirada_id):
                     'mazo_id': tirada_data['mazo']['id'],
                     'tirada_id': tirada_id
                 })
-                
+
                 if consulta_response and consulta_response.status_code == 200:
                     # Guardar resultado en sesión y redirigir
                     request.session['consulta_resultado'] = consulta_response.json()
@@ -429,7 +429,7 @@ def consulta_tarot(request, tirada_id):
             else:
                 messages.warning(request, 'No tienes suficientes créditos para esta consulta.')
                 return redirect('appWeb:comprar_creditos')
-    
+
     context = {
         'tirada': tirada_data,
         'form': form,
@@ -437,7 +437,7 @@ def consulta_tarot(request, tirada_id):
         'creditos_disponibles': wallet_data.get('creditos_disponibles', 0) if wallet_data else 0,
         'page_title': f'Consulta: {tirada_data.get("nombre", "Tirada de Tarot")}'
     }
-    
+
     return render(request, 'appWeb/consulta/form.html', context)
 
 
@@ -445,20 +445,20 @@ def consulta_tarot(request, tirada_id):
 def resultado_consulta(request, tirada_id):
     """Mostrar resultado de consulta"""
     resultado = request.session.get('consulta_resultado')
-    
+
     if not resultado:
         messages.error(request, 'No hay resultado de consulta disponible.')
         return redirect('appWeb:sets_list')
-    
+
     # Limpiar resultado de la sesión
     if 'consulta_resultado' in request.session:
         del request.session['consulta_resultado']
-    
+
     context = {
         'resultado': resultado,
         'page_title': 'Tu Destino Revelado'
     }
-    
+
     return render(request, 'appWeb/consulta/resultado.html', context)
 
 
@@ -466,21 +466,21 @@ def resultado_consulta(request, tirada_id):
 def perfil(request):
     """Perfil del usuario"""
     api = APIClient(request)
-    
+
     # Obtener datos del usuario
     user_data = api.get('/users/profile/detail/')
     wallet_data = api.get('/billing/mi-wallet/')
     estadisticas = api.get('/billing/estadisticas/')
-    
+
     # Procesar fechas en todos los datos
     user_data = process_api_dates(user_data)
     wallet_data = process_api_dates(wallet_data)
     estadisticas = process_api_dates(estadisticas)
-    
+
     form = ProfileForm(instance=request.user.profile if hasattr(request.user, 'profile') else None)
-    
+
     if request.method == 'POST':
-        form = ProfileForm(request.POST, request.FILES, 
+        form = ProfileForm(request.POST, request.FILES,
                          instance=request.user.profile if hasattr(request.user, 'profile') else None)
         if form.is_valid():
             # Actualizar perfil usando API
@@ -489,13 +489,13 @@ def perfil(request):
                 'telefono': form.cleaned_data.get('telefono'),
                 'biografia': form.cleaned_data.get('biografia'),
             })
-            
+
             if profile_response and profile_response.status_code == 200:
                 messages.success(request, 'Perfil actualizado exitosamente.')
                 return redirect('appWeb:perfil')
             else:
                 messages.error(request, 'Error al actualizar el perfil.')
-    
+
     context = {
         'form': form,
         'user_data': user_data,
@@ -503,7 +503,7 @@ def perfil(request):
         'estadisticas': estadisticas,
         'page_title': 'Tu Perfil Místico'
     }
-    
+
     return render(request, 'appWeb/perfil/index.html', context)
 
 
@@ -511,18 +511,18 @@ def perfil(request):
 def editar_perfil(request):
     """Editar perfil del usuario - consume API"""
     api = APIClient(request)
-    
+
     if request.method == 'POST':
         # Tomar datos del formulario y enviarlos a la API
         data = {}
-        
+
         # Datos del profile
         if request.POST.get('fecha_nacimiento'):
             data['fecha_nacimiento'] = request.POST.get('fecha_nacimiento')
-        
+
         if request.POST.get('biografia'):
             data['biografia'] = request.POST.get('biografia')
-        
+
         # CORREGIDO: Usar el método correcto de APIClient
         try:
             response = requests.put(
@@ -530,7 +530,7 @@ def editar_perfil(request):
                 headers=api._get_headers(),
                 data=json.dumps(data)
             )
-            
+
             if response.status_code == 200:
                 messages.success(request, 'Perfil actualizado exitosamente.')
                 return redirect('appWeb:perfil')
@@ -538,15 +538,15 @@ def editar_perfil(request):
                 messages.error(request, f'Error al actualizar el perfil. Código: {response.status_code}')
         except Exception as e:
             messages.error(request, f'Error de conexión: {str(e)}')
-    
+
     # GET: Mostrar formulario
     form = ProfileForm(instance=request.user.profile if hasattr(request.user, 'profile') else None)
-    
+
     context = {
         'form': form,
         'page_title': 'Editar Perfil'
     }
-    
+
     return render(request, 'appWeb/perfil/editar.html', context)
 
 
@@ -555,7 +555,7 @@ def editar_perfil(request):
 def cambiar_password(request):
     """Cambiar contraseña usando la API"""
     api = APIClient(request)
-    
+
     try:
         # Obtener datos del formulario
         data = {
@@ -563,12 +563,12 @@ def cambiar_password(request):
             'new_password': request.POST.get('new_password'),
             'new_password_confirm': request.POST.get('new_password_confirm')
         }
-        
+
         print(f"DEBUG - Datos a enviar: {data}")
-        
+
         # CORREGIDO: Usar APIClient correctamente
         response = api.post('/users/change-password/', data)
-        
+
         if response and response.status_code == 200:
             print(f"DEBUG - Success: {response.json()}")
             # Logout del usuario por seguridad
@@ -588,12 +588,12 @@ def cambiar_password(request):
                     error_data = {'error': f'HTTP {response.status_code}'}
             else:
                 error_data = {'error': 'No response from API'}
-            
+
             return JsonResponse({
                 'success': False,
                 'error': error_data.get('error', 'Error al cambiar contraseña')
             })
-            
+
     except Exception as e:
         print(f"DEBUG - Exception: {str(e)}")
         return JsonResponse({
@@ -606,19 +606,19 @@ def cambiar_password(request):
 def comprar_creditos(request):
     """Página para comprar créditos"""
     api = APIClient(request)
-    
+
     # Obtener paquetes con botones de pago
     pais_usuario = 'CL'  # Por defecto, luego puedes detectarlo con GeoIP
     paquetes_data = api.get('/billing/paquetes-con-botones/', {'pais': pais_usuario})
     wallet_data = api.get('/billing/mi-wallet/')
-    
+
     context = {
         'paquetes': paquetes_data or [],
         'wallet': wallet_data,
         'pais_usuario': pais_usuario,
         'page_title': 'Obtener Créditos Cósmicos'
     }
-    
+
     return render(request, 'appWeb/billing/creditos.html', context)
 
 
@@ -627,15 +627,15 @@ def historial_consultas(request):
     """Historial de consultas del usuario"""
     api = APIClient(request)
     consultas_data = api.get('/billing/mi-historial-consultas/')
-    
+
     # Procesar fechas en los datos de la API
     consultas_procesadas = process_api_dates(consultas_data)
-    
+
     context = {
         'consultas': consultas_procesadas or [],
         'page_title': 'Tu Viaje Místico'
     }
-    
+
     return render(request, 'appWeb/perfil/historial.html', context)
 
 
@@ -644,7 +644,7 @@ def motor_nautica(request):
     context = {
         'page_title': 'El Motor Náutica - Tecnología Mística'
     }
-    
+
     return render(request, 'appWeb/motor_nautica.html', context)
 
 
@@ -652,24 +652,24 @@ def motor_nautica(request):
 def payment_success(request):
     """Página de éxito del pago"""
     payment_reference = request.GET.get('ref')
-    
+
     context = {
         'payment_reference': payment_reference,
         'page_title': 'Pago Exitoso'
     }
-    
+
     return render(request, 'appWeb/payment/success.html', context)
 
 
 def payment_cancel(request):
     """Página de pago cancelado"""
     payment_reference = request.GET.get('ref')
-    
+
     context = {
         'payment_reference': payment_reference,
         'page_title': 'Pago Cancelado'
     }
-    
+
     return render(request, 'appWeb/payment/cancel.html', context)
 
 
@@ -680,7 +680,7 @@ def verificar_creditos(request):
     """AJAX: Verificar créditos disponibles"""
     api = APIClient(request)
     wallet_data = api.get('/billing/mi-wallet/')
-    
+
     return JsonResponse({
         'creditos_disponibles': wallet_data.get('creditos_disponibles', 0) if wallet_data else 0
     })
@@ -692,14 +692,14 @@ def procesar_pago(request):
     """AJAX: Procesar pago de créditos"""
     paquete_id = request.POST.get('paquete_id')
     boton_pago_id = request.POST.get('boton_pago_id')
-    
+
     api = APIClient(request)
     response = api.post('/billing/comprar-creditos/', {
         'paquete_id': paquete_id,
         'boton_pago_id': boton_pago_id,
         'pais_usuario': 'CL'
     })
-    
+
     if response and response.status_code == 200:
         return JsonResponse({
             'success': True,

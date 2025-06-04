@@ -22,11 +22,8 @@ ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,0.0.0.0').s
 # ==========================================
 
 # Detectar si estamos en PythonAnywhere o desarrollo
-IS_PRODUCTION = (
-    config('ENVIRONMENT', default='development') == 'production' or
-    'pythonanywhere' in config('ALLOWED_HOSTS', default='').lower() or
-    not DEBUG
-)
+IS_PRODUCTION = config('ENVIRONMENT', default='development') == 'production'
+
 
 # ==========================================
 # APPLICATIONS
@@ -147,9 +144,9 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 # STATICFILES_DIRS debe estar SIEMPRE (para collectstatic)
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),
-]
+# STATICFILES_DIRS = [
+#     os.path.join(BASE_DIR, 'static'),
+# ]
 
 if IS_PRODUCTION:
     # PRODUCCIÓN: Solo STATIC_ROOT para collectstatic
