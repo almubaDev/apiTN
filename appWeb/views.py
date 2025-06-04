@@ -370,10 +370,19 @@ def consulta_mazo(request, mazo_id):
                 'cartas_resultado': resultado.get('cartas', [])
             })
 
+            # VERIFICAR QUE EL BILLING SEA EXITOSO PRIMERO
+            if billing_response and billing_response.status_code == 200:
+                # Billing exitoso = créditos fueron descontados
+                wallet_actualizada = api.get('/billing/mi-wallet/')
+                creditos_finales = wallet_actualizada.get('creditos_disponibles', 0) if wallet_actualizada else 0
+            else:
+                # Billing falló = NO se descontaron créditos = cantidad original
+                creditos_finales = wallet_data.get('creditos_disponibles', 0)
+
             return JsonResponse({
                 'success': True,
                 'resultado': resultado,
-                'creditos_restantes': wallet_data.get('creditos_disponibles', 0) - costo
+                'creditos_restantes': creditos_finales
             })
         else:
             return JsonResponse({
