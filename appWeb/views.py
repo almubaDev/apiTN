@@ -53,7 +53,7 @@ class APIClient:
     """Cliente para consumir nuestra propia API"""
 
     def __init__(self, request=None):
-        self.base_url = 'https://www.tarotnautica.store/api'
+        self.base_url = 'https://www.tarotnautica.store//api'
         self.request = request
 
     def _get_headers(self):

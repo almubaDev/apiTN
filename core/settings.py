@@ -3,19 +3,11 @@ Django settings for core project.
 """
 
 from pathlib import Path
-from decouple import config
+from decouple import config, Csv
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-# ==========================================
-# CONFIGURACIÓN BÁSICA
-# ==========================================
-
-SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-this-in-production')
-DEBUG = config('DEBUG', default=True, cast=bool)
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,0.0.0.0').split(',')
 
 # ==========================================
 # DETECTAR ENTORNO AUTOMÁTICAMENTE
@@ -23,6 +15,32 @@ ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,0.0.0.0').s
 
 # Detectar si estamos en PythonAnywhere o desarrollo
 IS_PRODUCTION = config('ENVIRONMENT', default='development') == 'production'
+
+# ==========================================
+# CONFIGURACIÓN BÁSICA
+# ==========================================
+
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-this-in-production')
+DEBUG = config('DEBUG', default=True, cast=bool)
+#ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,0.0.0.0', cast=Csv())
+#ALLOWED_HOSTS = ['*']
+if IS_PRODUCTION:
+    ALLOWED_HOSTS = [
+        # Tu dominio principal
+        'tarotnautica.store',
+        'www.tarotnautica.store',
+
+        # Dominio de PythonAnywhere (para acceso directo)
+        'ForgeApp.pythonanywhere.com',
+        'webapp-2624612.pythonanywhere.com',
+
+        # Si planeas agregar subdominos en el futuro:
+        # 'api.tarotnautica.store',
+        # 'admin.tarotnautica.store',
+    ]
+else:
+    # Desarrollo local
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
 
 
 # ==========================================
@@ -143,17 +161,14 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-# STATICFILES_DIRS debe estar SIEMPRE (para collectstatic)
-# STATICFILES_DIRS = [
-#     os.path.join(BASE_DIR, 'static'),
-# ]
-
 if IS_PRODUCTION:
     # PRODUCCIÓN: Solo STATIC_ROOT para collectstatic
     STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-    # En producción NO se puede tener STATICFILES_DIRS Y STATIC_ROOT al mismo tiempo
-    # durante el servido, pero sí durante collectstatic
-
+else:
+    # DESARROLLO: STATICFILES_DIRS para archivos estáticos
+    STATICFILES_DIRS = [
+        os.path.join(BASE_DIR, 'static'),
+    ]
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
@@ -183,8 +198,11 @@ if IS_PRODUCTION:
     # PRODUCCIÓN: Solo orígenes específicos
     CORS_ALLOW_ALL_ORIGINS = False
     CORS_ALLOWED_ORIGINS = [
-        config('FRONTEND_URL', default='https://localhost:8000'),
+        config('FRONTEND_URL', default='https://www.tarotnautica.store'),
+        'https://tarotnautica.store',
+        'https://www.tarotnautica.store',
     ]
+    CORS_ALLOW_CREDENTIALS = True
 else:
     # DESARROLLO: Permitir todos para facilitar desarrollo
     CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default=True, cast=bool)
@@ -204,6 +222,11 @@ if IS_PRODUCTION:
     X_FRAME_OPTIONS = 'DENY'
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=True, cast=bool)
+
+    # Configuraciones adicionales de seguridad para producción
+    SECURE_HSTS_SECONDS = 31536000  # 1 año
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
 
 # ==========================================
 # CUSTOM USER MODEL
@@ -231,20 +254,40 @@ DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@tarotnautica.
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:8000')
 
 # ==========================================
-# LOGGING
+# LOGGING MEJORADO
 # ==========================================
 
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+        'file': {
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'django.log'),
+            'formatter': 'verbose',
         },
     },
     'loggers': {
+        'django': {
+            'handlers': ['console', 'file'] if IS_PRODUCTION else ['console'],
+            'level': 'INFO',
+        },
         'oraculoApi.services': {
-            'handlers': ['console'],
+            'handlers': ['console', 'file'] if IS_PRODUCTION else ['console'],
             'level': 'INFO',
         },
     },
