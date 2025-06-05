@@ -10,17 +10,17 @@
         position: relative;
         overflow: hidden;
     }
-    
+
     .paquete-card:hover {
         transform: translateY(-8px);
         box-shadow: 0 25px 50px rgba(139, 92, 246, 0.25);
     }
-    
+
     .paquete-card.destacado {
         border: 2px solid #fbbf24;
         box-shadow: 0 15px 35px rgba(251, 191, 36, 0.3);
     }
-    
+
     .paquete-card.destacado::before {
         content: "Más Popular";
         position: absolute;
@@ -34,23 +34,23 @@
         border-radius: 0 0 8px 8px;
         z-index: 10;
     }
-    
+
     .boton-pago {
         transition: all 0.2s ease;
     }
-    
+
     .boton-pago:hover {
         transform: scale(1.02);
     }
-    
+
     .boton-pago:active {
         transform: scale(0.98);
     }
-    
+
     .precio-anterior {
         position: relative;
     }
-    
+
     .precio-anterior::after {
         content: '';
         position: absolute;
@@ -61,24 +61,24 @@
         background: #ef4444;
         transform: rotate(-15deg);
     }
-    
+
     .wallet-display {
         background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(251, 191, 36, 0.1));
         border: 1px solid rgba(139, 92, 246, 0.3);
         animation: glow 3s ease-in-out infinite alternate;
     }
-    
+
     @keyframes glow {
         from { box-shadow: 0 0 20px rgba(139, 92, 246, 0.3); }
         to { box-shadow: 0 0 30px rgba(251, 191, 36, 0.4); }
     }
-    
+
     .metodo-pago-icon {
         width: 24px;
         height: 24px;
         object-fit: contain;
     }
-    
+
     .loading-overlay {
         position: fixed;
         top: 0;
@@ -92,7 +92,7 @@
         align-items: center;
         justify-content: center;
     }
-    
+
     .loading-spinner {
         width: 60px;
         height: 60px;
@@ -101,7 +101,7 @@
         border-radius: 50%;
         animation: spin 1s linear infinite;
     }
-    
+
     @keyframes spin {
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
@@ -111,7 +111,7 @@
 
 {% block content %}
 <div class="min-h-screen bg-gradient-to-br from-cosmic-900 via-cosmic-800 to-gold-900/20 py-20">
-    
+
     <!-- Header -->
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
         <div class="text-center">
@@ -126,7 +126,7 @@
             </p>
         </div>
     </div>
-    
+
     <!-- Wallet Display -->
     {% if wallet %}
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
@@ -141,17 +141,17 @@
         </div>
     </div>
     {% endif %}
-    
+
     <!-- Paquetes de Créditos -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         {% if paquetes %}
         <!-- Grid de Paquetes -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {% for paquete_data in paquetes %}
             {% with paquete=paquete_data.paquete botones=paquete_data.botones_disponibles %}
             <div class="paquete-card bg-cosmic-800/80 backdrop-blur-sm rounded-2xl border border-cosmic-600 p-8 {% if paquete.destacado %}destacado{% endif %}">
-                
+
                 <!-- Header del Paquete -->
                 <div class="text-center mb-8">
                     <h3 class="font-mystical text-2xl font-bold text-cosmic-100 mb-2">
@@ -161,7 +161,7 @@
                         {{ paquete.descripcion }}
                     </p>
                 </div>
-                
+
                 <!-- Cantidad de Créditos -->
                 <div class="text-center mb-6">
                     <div class="text-5xl font-bold text-gold-400 mb-2">
@@ -171,7 +171,7 @@
                         Créditos Místicos
                     </div>
                 </div>
-                
+
                 <!-- Pricing -->
                 <div class="text-center mb-6">
                     {% if paquete.tiene_descuento %}
@@ -195,7 +195,7 @@
                         ${{ paquete.precio_por_credito }} por crédito
                     </div>
                 </div>
-                
+
                 <!-- Beneficios -->
                 <div class="mb-8">
                     <h4 class="font-medium text-cosmic-200 mb-3 text-center">
@@ -227,7 +227,7 @@
                         {% endif %}
                     </ul>
                 </div>
-                
+
                 <!-- Botones de Pago -->
                 <div class="space-y-3">
                     {% for boton in botones %}
@@ -252,7 +252,7 @@
             {% endwith %}
             {% endfor %}
         </div>
-        
+
         {% else %}
         <!-- Estado sin paquetes -->
         <div class="text-center py-16">
@@ -263,7 +263,7 @@
             <p class="text-cosmic-400 mb-6">
                 Actualmente no hay paquetes de créditos disponibles en tu región.
             </p>
-            <a href="{% url 'appWeb:home' %}" 
+            <a href="{% url 'appWeb:home' %}"
                class="inline-flex items-center bg-primary-500 hover:bg-primary-600 text-white px-6 py-3 rounded-lg font-medium transition-colors">
                 <i class="fas fa-home mr-2"></i>
                 Volver al Inicio
@@ -271,7 +271,7 @@
         </div>
         {% endif %}
     </div>
-    
+
     <!-- Información Adicional -->
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mt-20">
         <div class="bg-cosmic-800/50 backdrop-blur-sm rounded-2xl p-8 border border-cosmic-600">
@@ -279,7 +279,7 @@
                 <i class="fas fa-info-circle mr-3 text-primary-400"></i>
                 Información sobre los Créditos
             </h3>
-            
+
             <div class="grid md:grid-cols-2 gap-8">
                 <div>
                     <h4 class="font-semibold text-cosmic-200 mb-3">
@@ -293,7 +293,7 @@
                         <li>• Cumplimiento de estándares PCI</li>
                     </ul>
                 </div>
-                
+
                 <div>
                     <h4 class="font-semibold text-cosmic-200 mb-3">
                         <i class="fas fa-clock mr-2 text-gold-400"></i>
@@ -307,7 +307,7 @@
                     </ul>
                 </div>
             </div>
-            
+
             <div class="mt-8 text-center">
                 <p class="text-cosmic-400 text-sm">
                     ¿Tienes preguntas? <a href="#" class="text-primary-400 hover:text-primary-300 transition-colors">Contacta nuestro soporte</a>
@@ -333,29 +333,29 @@
 // Variables globales
 let pagoEnProceso = false;
 
-// FUNCIÓN MODIFICADA: Ahora redirige a plataforma de pago en lugar de simular
+// FUNCIÓN ACTUALIZADA: Ahora genera formularios HTML en lugar de redirecciones
 function iniciarPago(paqueteId, botonPagoId, metodoPago) {
     if (pagoEnProceso) {
         console.log('Pago ya en proceso...');
         return;
     }
-    
+
     console.log('Iniciando pago:', { paqueteId, botonPagoId, metodoPago });
-    
+
     // Mostrar loading
     mostrarLoading();
     pagoEnProceso = true;
-    
+
     // Preparar datos para el API
     const formData = new FormData();
     formData.append('paquete_id', paqueteId);
     formData.append('boton_pago_id', botonPagoId);
     formData.append('pais_usuario', '{{ pais_usuario }}');
-    
+
     // Obtener CSRF token
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-    
-    // CAMBIO PRINCIPAL: Llamar al nuevo endpoint para generar URL de pago
+
+    // NUEVO: Generar formulario PayPal en lugar de redirección
     fetch('/api/billing/generar-url-pago/', {
         method: 'POST',
         body: formData,
@@ -369,15 +369,13 @@ function iniciarPago(paqueteId, botonPagoId, metodoPago) {
     })
     .then(data => {
         console.log('Datos recibidos:', data);
-        
-        if (data.success) {
-            // REDIRIGIR a la plataforma de pago externa
-            console.log('Redirigiendo a:', data.payment_url);
-            window.location.href = data.payment_url;
-            
+
+        if (data.success && data.tipo === 'formulario') {
+            // NUEVO: Crear y enviar formulario HTML
+            crearYEnviarFormularioPayPal(data.formulario);
         } else {
             // Error
-            mostrarMensajeError(data.error || 'Error generando URL de pago');
+            mostrarMensajeError(data.error || 'Error generando formulario de pago');
         }
     })
     .catch(error => {
@@ -388,6 +386,30 @@ function iniciarPago(paqueteId, botonPagoId, metodoPago) {
         ocultarLoading();
         pagoEnProceso = false;
     });
+}
+
+// NUEVA FUNCIÓN: Crear formulario HTML y enviarlo a PayPal
+function crearYEnviarFormularioPayPal(formularioData) {
+    console.log('Creando formulario PayPal:', formularioData);
+
+    // Crear formulario dinámicamente
+    const form = document.createElement('form');
+    form.method = formularioData.method;
+    form.action = formularioData.action;
+
+    // Agregar todos los campos del formulario
+    Object.entries(formularioData.campos).forEach(([name, value]) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = name;
+        input.value = value;
+        form.appendChild(input);
+    });
+
+    // Agregar formulario al DOM y enviarlo
+    document.body.appendChild(form);
+    console.log('Enviando formulario a PayPal...');
+    form.submit();
 }
 
 // Función para mostrar el overlay de loading
@@ -408,7 +430,7 @@ function ocultarLoading() {
     }
 }
 
-// FUNCIONES DE MENSAJES DE ERROR (simplificadas ya que principalmente redirigimos)
+// FUNCIONES DE MENSAJES DE ERROR
 function mostrarMensajeError(mensaje) {
     // Crear modal de error dinámico
     const modal = document.createElement('div');
@@ -427,7 +449,7 @@ function mostrarMensajeError(mensaje) {
                 </p>
             </div>
             <div class="p-6 border-t border-cosmic-600">
-                <button onclick="this.closest('.fixed').remove()" 
+                <button onclick="this.closest('.fixed').remove()"
                         class="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white py-3 rounded-lg font-medium transition-all duration-300">
                     <i class="fas fa-times mr-2"></i>Cerrar
                 </button>

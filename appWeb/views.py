@@ -677,16 +677,99 @@ def motor_nautica(request):
 
 
 # NUEVAS VISTAS para páginas de retorno de pago
+@csrf_exempt
+@require_http_methods(["GET", "POST"])
 def payment_success(request):
-    """Página de éxito del pago"""
-    payment_reference = request.GET.get('ref')
+    """
+    Página de éxito del pago - Maneja tanto GET como POST
+    """
+    if request.method == 'POST':
+        # Datos enviados directamente por PayPal
+        return _procesar_retorno_paypal(request)
+    else:
+        # Verificación AJAX o acceso directo
+        payment_reference = request.GET.get('ref')
+        context = {
+            'payment_reference': payment_reference,
+            'page_title': 'Pago Exitoso'
+        }
+        return render(request, 'appWeb/payment/success.html', context)
 
-    context = {
-        'payment_reference': payment_reference,
-        'page_title': 'Pago Exitoso'
-    }
 
-    return render(request, 'appWeb/payment/success.html', context)
+def _procesar_retorno_paypal(request):
+    """
+    Procesar datos POST enviados por PayPal después del pago
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+
+    # Extraer datos importantes de PayPal
+    txn_id = request.POST.get('txn_id', '')
+    custom_id = request.POST.get('custom', '')
+    payment_status = request.POST.get('payment_status', '')
+    mc_gross = request.POST.get('mc_gross', '')
+    mc_currency = request.POST.get('mc_currency', '')
+    payer_email = request.POST.get('payer_email', '')
+
+    logger.info(f"PayPal POST recibido - Custom: {custom_id}, TxnID: {txn_id}, Status: {payment_status}")
+
+    # Validaciones básicas
+    if not custom_id or not txn_id:
+        logger.error(f"Datos incompletos de PayPal: custom={custom_id}, txn_id={txn_id}")
+        return render(request, 'appWeb/payment/cancel.html', {
+            'error': 'Datos de pago incompletos'
+        })
+
+    try:
+        # Importar modelos necesarios
+        from billing.models import PagoCreditos, Wallet, TransaccionCreditos
+        from django.db import transaction
+        from django.utils import timezone
+
+        # Buscar la compra por custom_id
+        pago = PagoCreditos.objects.get(custom_id=custom_id, estado='pendiente')
+
+        # Validaciones de seguridad básicas
+        if payment_status != 'Completed':
+            return render(request, 'appWeb/payment/cancel.html', {
+                'error': f'Pago no completado: {payment_status}'
+            })
+
+        # Completar el pago
+        with transaction.atomic():
+            # Actualizar datos del pago
+            pago.estado = 'completado'
+            pago.datos_pago.update({
+                'txn_id': txn_id,
+                'payer_email': payer_email,
+                'timestamp_completado': timezone.now().isoformat(),
+                'origen': 'paypal_post_directo'
+            })
+            pago.save()
+
+            # Agregar créditos al usuario
+            wallet, created = Wallet.objects.get_or_create(user=pago.user)
+            wallet.agregar_creditos(pago.paquete_creditos.cantidad_creditos)
+
+            # Crear registro de transacción
+            TransaccionCreditos.objects.create(
+                user=pago.user,
+                tipo='compra',
+                cantidad=pago.paquete_creditos.cantidad_creditos,
+                descripcion=f'Compra PayPal - {pago.paquete_creditos.nombre}',
+                paquete_creditos=pago.paquete_creditos
+            )
+
+            logger.info(f"Pago completado: {custom_id} | Usuario: {pago.user.email}")
+
+        # Redirigir a página de éxito con custom_id como referencia
+        return redirect(f"/payment/success/?ref={custom_id}&source=paypal&status=completed")
+
+    except Exception as e:
+        logger.error(f"Error procesando retorno PayPal: {str(e)}")
+        return render(request, 'appWeb/payment/cancel.html', {
+            'error': 'Error procesando pago'
+        })
 
 
 def payment_cancel(request):

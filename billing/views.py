@@ -164,7 +164,7 @@ def mi_historial_consultas(request):
 @permission_classes([permissions.IsAuthenticated])
 def generar_url_pago(request):
     """
-    Generar URL de pago para redirigir a la plataforma externa
+    Generar formulario HTML PayPal en lugar de URL de redirección
     """
     serializer = ComprarCreditosSerializer(data=request.data)
 
@@ -185,19 +185,11 @@ def generar_url_pago(request):
                 'error': 'Método de pago no disponible en tu país'
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        # Generar referencia según el tipo de enlace
-        metodo = boton_pago.metodo_pago.codigo
+        # Generar custom_id único para esta compra específica
+        import uuid
+        custom_id = f"TN-{uuid.uuid4().hex[:12].upper()}"
 
-        # Si es un enlace directo de PayPal
-        if metodo == 'paypal' and boton_pago.url_base and 'paypal.com/ncp/payment/' in boton_pago.url_base:
-            # Extraer ID del enlace PayPal
-            paypal_link_id = boton_pago.url_base.split('/')[-1]
-            payment_reference = paypal_link_id
-        else:
-            # Generar referencia normal
-            payment_reference = f"TN-{uuid.uuid4().hex[:12].upper()}"
-
-        # Crear registro de pago PENDIENTE
+        # Crear registro de pago PENDIENTE con custom_id
         with transaction.atomic():
             pago = PagoCreditos.objects.create(
                 user=request.user,
@@ -206,33 +198,55 @@ def generar_url_pago(request):
                 monto=paquete.precio,
                 metodo_pago=boton_pago.metodo_pago.codigo,
                 estado='pendiente',
-                referencia_externa=payment_reference,
+                referencia_externa=custom_id,
+                custom_id=custom_id,
                 datos_pago={
                     'pais_usuario': pais_usuario,
                     'timestamp': timezone.now().isoformat(),
                     'user_id': request.user.id,
                     'user_email': request.user.email,
-                    'paypal_link_id': paypal_link_id if metodo == 'paypal' and 'paypal.com/ncp/payment/' in boton_pago.url_base else None,
-                    'es_enlace_directo': 'paypal.com/ncp/payment/' in boton_pago.url_base if boton_pago.url_base else False
+                    'metodo': 'formulario_paypal'
                 }
             )
 
-        # Generar URL de pago según el método
-        payment_url = _generar_url_segun_metodo(boton_pago, pago, request)
+        # En lugar de URL, devolver datos para generar formulario HTML
+        base_url = request.build_absolute_uri('/')
+
+        formulario_data = {
+            'action': 'https://www.paypal.com/cgi-bin/webscr',
+            'method': 'POST',
+            'campos': {
+                'cmd': '_xclick',
+                'business': 'alan.munoz.b@gmail.com',  # CAMBIAR por tu email PayPal
+                'item_name': f'Tarotnaútica - {paquete.nombre}',
+                'amount': str(paquete.precio),
+                'currency_code': 'USD',
+                'custom': custom_id,
+                'return': f"{base_url}payment/success/",
+                'cancel_return': f"{base_url}payment/cancel/",
+                'rm': '2',
+                'no_shipping': '1',
+                'no_note': '1'
+            }
+        }
 
         return Response({
             'success': True,
-            'payment_url': payment_url,
-            'payment_reference': payment_reference,
-            'metodo_pago': boton_pago.metodo_pago.nombre,
+            'tipo': 'formulario',
+            'formulario': formulario_data,
+            'custom_id': custom_id,
+            'paquete_nombre': paquete.nombre,
             'monto': str(paquete.precio)
         }, status=status.HTTP_200_OK)
 
     except Exception as e:
         return Response({
-            'error': f'Error generando URL de pago: {str(e)}'
+            'error': f'Error generando formulario de pago: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+
+ #========================================================================
 
 def _generar_url_segun_metodo(boton_pago, pago, request):
     """
@@ -283,20 +297,18 @@ def _generar_url_segun_metodo(boton_pago, pago, request):
         return f"{boton_pago.url_base}?ref={pago.referencia_externa}&amount={pago.monto}"
 
 
-# ===================================================================
-# FUNCIÓN ACTUALIZADA: verificar_pago con manejo de PayPal directo
-# ===================================================================
+
 @api_view(['GET'])
 @permission_classes([permissions.AllowAny])
 def verificar_pago(request):
     """
-    Verificar el estado de un pago - VERSIÓN CORREGIDA para PayPal directo
+    Verificar el estado de un pago - VERSIÓN CORREGIDA para custom_id
     """
     payment_ref = request.GET.get('ref')
     source = request.GET.get('source')
     status_param = request.GET.get('status')
 
-    logger.info(f"🔍 Verificando pago - Ref: {payment_ref}, Source: {source}, Status: {status_param}")
+    logger.info(f"Verificando pago - Ref: {payment_ref}, Source: {source}, Status: {status_param}")
 
     if not payment_ref:
         return Response({
@@ -304,59 +316,63 @@ def verificar_pago(request):
         }, status=status.HTTP_400_BAD_REQUEST)
 
     # ===================================================================
-    # CASO 1: PAGO DIRECTO DE PAYPAL (NUEVO - ESTA ES LA CLAVE)
+    # CASO 1: PAGO DIRECTO DE PAYPAL COMPLETADO
     # ===================================================================
     if source == 'paypal' and status_param == 'completed':
-        logger.info(f"🎉 Procesando pago directo de PayPal: {payment_ref}")
+        logger.info(f"Procesando pago directo de PayPal: {payment_ref}")
 
-        # Verificar si ya existe este pago
-        pago_existente = PagoCreditos.objects.filter(referencia_externa=payment_ref).first()
+        try:
+            # Buscar el pago por custom_id
+            pago = PagoCreditos.objects.filter(custom_id=payment_ref).first()
 
-        if pago_existente:
-            if pago_existente.estado == 'completado':
-                logger.info(f"✅ Pago ya procesado anteriormente: {payment_ref}")
-                return Response({
-                    'success': True,
-                    'estado': 'completado',
-                    'paquete_nombre': pago_existente.paquete_creditos.nombre,
-                    'creditos_agregados': pago_existente.paquete_creditos.cantidad_creditos,
-                    'creditos_totales': pago_existente.user.wallet.creditos_disponibles,
-                    'monto': str(pago_existente.monto),
-                    'fecha_pago': pago_existente.updated_at.isoformat()
-                })
+            if pago:
+                if pago.estado == 'completado':
+                    # Ya procesado anteriormente
+                    logger.info(f"Pago ya completado: {payment_ref}")
+                    return Response({
+                        'success': True,
+                        'estado': 'completado',
+                        'paquete_nombre': pago.paquete_creditos.nombre,
+                        'creditos_agregados': pago.paquete_creditos.cantidad_creditos,
+                        'creditos_totales': pago.user.wallet.creditos_disponibles,
+                        'monto': str(pago.monto),
+                        'fecha_pago': pago.updated_at.isoformat()
+                    })
+                else:
+                    # Completar pago pendiente
+                    logger.info(f"Completando pago pendiente: {payment_ref}")
+                    _procesar_pago_completado(pago)
+                    return Response({
+                        'success': True,
+                        'estado': 'completado',
+                        'paquete_nombre': pago.paquete_creditos.nombre,
+                        'creditos_agregados': pago.paquete_creditos.cantidad_creditos,
+                        'creditos_totales': pago.user.wallet.creditos_disponibles,
+                        'monto': str(pago.monto),
+                        'fecha_pago': pago.updated_at.isoformat()
+                    })
             else:
-                # Completar pago existente pero pendiente
-                logger.info(f"🔄 Completando pago existente: {payment_ref}")
-                _procesar_pago_completado(pago_existente)
+                # NO EXISTE EL PAGO - Error
+                logger.warning(f"Pago no encontrado: {payment_ref}")
                 return Response({
-                    'success': True,
-                    'estado': 'completado',
-                    'paquete_nombre': pago_existente.paquete_creditos.nombre,
-                    'creditos_agregados': pago_existente.paquete_creditos.cantidad_creditos,
-                    'creditos_totales': pago_existente.user.wallet.creditos_disponibles,
-                    'monto': str(pago_existente.monto),
-                    'fecha_pago': pago_existente.updated_at.isoformat()
-                })
-        else:
-            # CREAR PAGO NUEVO DESDE PAYPAL (CASO MÁS COMÚN PARA TU PROBLEMA)
-            logger.info(f"🆕 Creando nuevo pago desde confirmación PayPal: {payment_ref}")
-            return _crear_pago_desde_paypal_directo(payment_ref, request)
+                    'error': 'Pago no encontrado',
+                    'referencia': payment_ref
+                }, status=status.HTTP_404_NOT_FOUND)
+
+        except Exception as e:
+            logger.error(f"Error procesando pago PayPal {payment_ref}: {str(e)}")
+            return Response({
+                'error': f'Error procesando pago: {str(e)}',
+                'referencia': payment_ref
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     # ===================================================================
-    # CASO 2: BÚSQUEDA NORMAL EN BASE DE DATOS (CÓDIGO ORIGINAL)
+    # CASO 2: BÚSQUEDA NORMAL EN BASE DE DATOS
     # ===================================================================
     try:
-        # Buscar por referencia normal
-        try:
-            pago = PagoCreditos.objects.get(referencia_externa=payment_ref)
-        except PagoCreditos.DoesNotExist:
-            # Buscar por PayPal link ID en datos_pago
-            pago = PagoCreditos.objects.get(
-                datos_pago__paypal_link_id=payment_ref,
-                estado='pendiente'
-            )
+        # Buscar por custom_id
+        pago = PagoCreditos.objects.get(custom_id=payment_ref)
 
-        # Procesar según estado
         if pago.estado == 'completado':
             return Response({
                 'success': True,
@@ -367,11 +383,10 @@ def verificar_pago(request):
                 'monto': str(pago.monto),
                 'fecha_pago': pago.updated_at.isoformat()
             })
-
         elif pago.estado == 'pendiente':
-            # Auto-completar si han pasado más de 10 segundos
+            # Auto-completar si han pasado más de 5 segundos
             tiempo_transcurrido = (timezone.now() - pago.created_at).total_seconds()
-            if tiempo_transcurrido > 10:
+            if tiempo_transcurrido > 5:
                 _procesar_pago_completado(pago)
                 return Response({
                     'success': True,
@@ -386,9 +401,8 @@ def verificar_pago(request):
                 return Response({
                     'success': True,
                     'estado': 'pendiente',
-                    'mensaje': 'Verificando pago con la plataforma...'
+                    'mensaje': 'Verificando pago...'
                 })
-
         else:
             return Response({
                 'success': False,
@@ -397,123 +411,185 @@ def verificar_pago(request):
 
     except PagoCreditos.DoesNotExist:
         return Response({
-            'error': 'Pago no encontrado en base de datos. Si acabas de pagar, espera unos segundos.',
-            'debug_info': {
-                'referencia': payment_ref,
-                'source': source,
-                'status': status_param
-            }
+            'error': 'Pago no encontrado. Si acabas de completar el pago, contacta soporte.',
+            'referencia': payment_ref,
+            'source': source,
+            'status': status_param
         }, status=status.HTTP_404_NOT_FOUND)
 
 
 # ===================================================================
-# FUNCIÓN NUEVA: Crear pago desde confirmación directa de PayPal
+# FUNCIÓN NUEVA: _crear_pago_desde_paypal_success
 # ===================================================================
-def _crear_pago_desde_paypal_directo(payment_ref, request):
+def _crear_pago_desde_paypal_success(payment_ref, request):
     """
-    Crear un pago exitoso cuando PayPal confirma directamente
-    sin que hayamos creado el registro previamente
+    Crear un pago cuando viene confirmación de PayPal pero no tenemos registro
+    Esta función maneja el caso donde el usuario completó el pago en PayPal
+    pero por alguna razón no se creó el registro inicial en nuestra DB
     """
     try:
+        # 1. VERIFICAR QUE HAYA UN USUARIO AUTENTICADO
+        if not hasattr(request, 'user') or not request.user.is_authenticated:
+            logger.error(f"❌ Usuario no autenticado para pago {payment_ref}")
+            return Response({
+                'error': 'Para completar el pago debes iniciar sesión',
+                'referencia': payment_ref,
+                'accion_requerida': 'login'
+            }, status=status.HTTP_401_UNAUTHORIZED)
+
+        # 2. OBTENER EL PAQUETE A USAR
+        # OPCIÓN A: Usar el paquete más básico por defecto
+        paquete = PaqueteCreditos.objects.filter(activo=True).order_by('precio').first()
+
+        # OPCIÓN B: Si tienes una forma de detectar qué paquete era, úsala aquí
+        # Por ejemplo, si la referencia tiene un patrón que indica el paquete:
+        # if 'PREMIUM' in payment_ref:
+        #     paquete = PaqueteCreditos.objects.filter(nombre__icontains='premium').first()
+
+        if not paquete:
+            logger.error(f"❌ No hay paquetes disponibles para {payment_ref}")
+            return Response({
+                'error': 'No hay paquetes disponibles. Contacta soporte.',
+                'referencia': payment_ref
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        logger.info(f"📦 Usando paquete por defecto: {paquete.nombre} para {payment_ref}")
+
+        # 3. CREAR EL PAGO EN TRANSACCIÓN ATÓMICA
         with transaction.atomic():
-            # Necesitamos adivinar los datos del pago desde la referencia
-            # Por ahora, vamos a usar un paquete por defecto
-            paquete_default = PaqueteCreditos.objects.filter(activo=True).first()
-
-            if not paquete_default:
-                logger.error("❌ No hay paquetes activos disponibles")
+            # Verificar que no exista ya (doble verificación)
+            pago_existente = PagoCreditos.objects.filter(referencia_externa=payment_ref).first()
+            if pago_existente:
+                logger.info(f"✅ Pago ya existe, procesándolo: {payment_ref}")
+                if pago_existente.estado != 'completado':
+                    _procesar_pago_completado(pago_existente)
                 return Response({
-                    'error': 'No hay paquetes disponibles. Contacta soporte.',
-                    'referencia': payment_ref
-                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                    'success': True,
+                    'estado': 'completado',
+                    'paquete_nombre': pago_existente.paquete_creditos.nombre,
+                    'creditos_agregados': pago_existente.paquete_creditos.cantidad_creditos,
+                    'creditos_totales': pago_existente.user.wallet.creditos_disponibles,
+                    'monto': str(pago_existente.monto),
+                    'fecha_pago': pago_existente.updated_at.isoformat()
+                })
 
-            # Si no hay usuario autenticado, tenemos un problema
-            if not request.user.is_authenticated:
-                logger.error(f"❌ Usuario no autenticado para pago {payment_ref}")
-                return Response({
-                    'error': 'Usuario no identificado. Inicia sesión y contacta soporte.',
-                    'referencia': payment_ref
-                }, status=status.HTTP_401_UNAUTHORIZED)
-
-            # Crear el pago con datos básicos
+            # Crear el pago como completado
             pago = PagoCreditos.objects.create(
                 user=request.user,
-                paquete_creditos=paquete_default,
-                monto=paquete_default.precio,
+                paquete_creditos=paquete,
+                monto=paquete.precio,
                 estado='completado',  # Ya completado porque PayPal lo confirmó
                 metodo_pago='paypal',
                 referencia_externa=payment_ref,
                 datos_pago={
-                    'origen': 'paypal_directo',
-                    'confirmado_por_paypal': True,
-                    'timestamp_confirmacion': timezone.now().isoformat(),
+                    'origen': 'paypal_success_page',
+                    'confirmado_automaticamente': True,
+                    'timestamp': timezone.now().isoformat(),
+                    'user_email': request.user.email,
                     'source': 'paypal',
                     'status': 'completed',
-                    'nota': 'Pago creado desde confirmación directa de PayPal'
+                    'nota': 'Pago creado desde página de éxito - no existía registro previo'
                 }
             )
 
-            # Agregar créditos al usuario
-            wallet, created = Wallet.objects.get_or_create(user=request.user)
-            wallet.agregar_creditos(paquete_default.cantidad_creditos)
+            # Obtener o crear wallet
+            wallet, wallet_created = Wallet.objects.get_or_create(user=request.user)
 
-            # Crear transacción
+            # Agregar créditos
+            creditos_antes = wallet.creditos_disponibles
+            wallet.agregar_creditos(paquete.cantidad_creditos)
+            creditos_despues = wallet.creditos_disponibles
+
+            # Crear registro de transacción
             TransaccionCreditos.objects.create(
                 user=request.user,
                 tipo='compra',
-                cantidad=paquete_default.cantidad_creditos,
-                descripcion=f'Compra confirmada por PayPal - Ref: {payment_ref}',
-                paquete_creditos=paquete_default
+                cantidad=paquete.cantidad_creditos,
+                descripcion=f'Compra vía PayPal (auto-creado) - Ref: {payment_ref}',
+                paquete_creditos=paquete
             )
 
-            logger.info(f"✅ Pago creado exitosamente desde PayPal: {payment_ref}")
+            logger.info(f"✅ Pago creado exitosamente: {payment_ref} | Usuario: {request.user.email} | Créditos: {creditos_antes} → {creditos_despues}")
 
             return Response({
                 'success': True,
                 'estado': 'completado',
-                'paquete_nombre': paquete_default.nombre,
-                'creditos_agregados': paquete_default.cantidad_creditos,
+                'paquete_nombre': paquete.nombre,
+                'creditos_agregados': paquete.cantidad_creditos,
                 'creditos_totales': wallet.creditos_disponibles,
-                'monto': str(paquete_default.precio),
+                'monto': str(paquete.precio),
                 'fecha_pago': pago.created_at.isoformat(),
-                'nota': 'Pago procesado desde confirmación PayPal'
+                'nota': 'Pago procesado automáticamente desde PayPal'
             })
 
     except Exception as e:
-        logger.error(f"💥 Error creando pago desde PayPal {payment_ref}: {str(e)}")
+        logger.error(f"💥 Error creando pago desde PayPal success {payment_ref}: {str(e)}")
+        import traceback
+        logger.error(f"💥 Traceback: {traceback.format_exc()}")
+
         return Response({
             'error': f'Error procesando pago: {str(e)}',
             'referencia': payment_ref,
-            'solucion': 'Contacta soporte con esta referencia'
+            'solucion': 'Contacta soporte con esta referencia para resolver manualmente'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+# ===================================================================
+# FUNCIÓN MEJORADA: _procesar_pago_completado
+# ===================================================================
 def _procesar_pago_completado(pago):
     """
     Procesar un pago como completado (agregar créditos)
+    Versión mejorada con mejor logging y validaciones
     """
-    with transaction.atomic():
-        # Actualizar estado del pago
-        pago.estado = 'completado'
-        pago.save()
+    try:
+        with transaction.atomic():
+            # Verificar que no esté ya completado
+            if pago.estado == 'completado':
+                logger.info(f"ℹ️ Pago {pago.referencia_externa} ya estaba completado")
+                return
 
-        # Obtener o crear wallet
-        wallet, created = Wallet.objects.get_or_create(user=pago.user)
+            logger.info(f"🔄 Procesando pago como completado: {pago.referencia_externa}")
 
-        # Agregar créditos
-        wallet.agregar_creditos(pago.paquete_creditos.cantidad_creditos)
+            # Actualizar estado del pago
+            pago.estado = 'completado'
+            pago.save()
 
-        # Crear transacción
-        TransaccionCreditos.objects.create(
-            user=pago.user,
-            tipo='compra',
-            cantidad=pago.paquete_creditos.cantidad_creditos,
-            descripcion=f'Compra de {pago.paquete_creditos.nombre} vía {pago.metodo_pago}',
-            paquete_creditos=pago.paquete_creditos
-        )
+            # Obtener o crear wallet
+            wallet, created = Wallet.objects.get_or_create(user=pago.user)
+            creditos_antes = wallet.creditos_disponibles
 
-        logger.info(f"✅ Pago {pago.referencia_externa} procesado como completado")
+            # Agregar créditos
+            wallet.agregar_creditos(pago.paquete_creditos.cantidad_creditos)
+            creditos_despues = wallet.creditos_disponibles
 
+            # Crear transacción (verificar que no exista)
+            transaccion_existente = TransaccionCreditos.objects.filter(
+                user=pago.user,
+                tipo='compra',
+                paquete_creditos=pago.paquete_creditos,
+                descripcion__icontains=pago.referencia_externa
+            ).first()
+
+            if not transaccion_existente:
+                TransaccionCreditos.objects.create(
+                    user=pago.user,
+                    tipo='compra',
+                    cantidad=pago.paquete_creditos.cantidad_creditos,
+                    descripcion=f'Compra de {pago.paquete_creditos.nombre} vía {pago.metodo_pago} - Ref: {pago.referencia_externa}',
+                    paquete_creditos=pago.paquete_creditos
+                )
+                logger.info(f"📝 Transacción registrada para {pago.referencia_externa}")
+            else:
+                logger.info(f"ℹ️ Transacción ya existía para {pago.referencia_externa}")
+
+            logger.info(f"✅ Pago {pago.referencia_externa} completado | Usuario: {pago.user.email} | Créditos: {creditos_antes} → {creditos_despues}")
+
+    except Exception as e:
+        logger.error(f"💥 Error procesando pago completado {pago.referencia_externa}: {str(e)}")
+        import traceback
+        logger.error(f"💥 Traceback: {traceback.format_exc()}")
+        raise
 
 # FUNCIÓN MANTENIDA PARA RETROCOMPATIBILIDAD (pero modificada)
 @api_view(['POST'])

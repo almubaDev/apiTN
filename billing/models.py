@@ -14,15 +14,15 @@ class MetodoPago(models.Model):
     activo = models.BooleanField(default=True)
     orden = models.IntegerField(default=0)  # Para ordenar los botones
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     class Meta:
         verbose_name = 'Método de Pago'
         verbose_name_plural = 'Métodos de Pago'
         ordering = ['orden', 'nombre']
-    
+
     def __str__(self):
         return self.nombre
-    
+
     def soporta_pais(self, codigo_pais):
         """
         Verificar si el método de pago soporta un país específico
@@ -39,29 +39,29 @@ class PaqueteCreditos(models.Model):
     destacado = models.BooleanField(default=False)  # Marcar como "Más Popular"
     activo = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     class Meta:
         verbose_name = 'Paquete de Créditos'
         verbose_name_plural = 'Paquetes de Créditos'
         ordering = ['precio']
-    
+
     def __str__(self):
         return f"{self.nombre} - {self.cantidad_creditos} créditos"
-    
+
     @property
     def precio_por_credito(self):
         """
         Calcular precio por crédito individual
         """
         return round(float(self.precio) / self.cantidad_creditos, 3)
-    
+
     @property
     def tiene_descuento(self):
         """
         Verificar si tiene precio anterior (descuento)
         """
         return self.precio_anterior and self.precio_anterior > self.precio
-    
+
     @property
     def porcentaje_descuento(self):
         """
@@ -79,15 +79,15 @@ class BotonPago(models.Model):
     parametros_adicionales = models.JSONField(default=dict, blank=True)  # Parámetros específicos del método
     activo = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     class Meta:
         verbose_name = 'Botón de Pago'
         verbose_name_plural = 'Botones de Pago'
         unique_together = ['paquete', 'metodo_pago']
-    
+
     def __str__(self):
         return f"{self.paquete.nombre} - {self.metodo_pago.nombre}"
-    
+
     def generar_url_pago(self, user=None):
         """
         Generar URL de pago personalizada para el usuario
@@ -95,7 +95,7 @@ class BotonPago(models.Model):
         # Aquí se generaría la URL específica según el método de pago
         # Por ahora retornamos la URL base
         return self.url_base
-    
+
     def es_disponible_para_pais(self, codigo_pais):
         """
         Verificar si el botón está disponible para un país específico
@@ -110,12 +110,12 @@ class TipoSuscripcion(models.Model):
     tiradas_incluidas = models.IntegerField(default=30)
     activo = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     class Meta:
         verbose_name = 'Tipo de Suscripción'
         verbose_name_plural = 'Tipos de Suscripción'
         ordering = ['precio_mensual']
-    
+
     def __str__(self):
         return f"{self.nombre} - ${self.precio_mensual}/mes"
 
@@ -125,24 +125,24 @@ class Wallet(models.Model):
     creditos_disponibles = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         verbose_name = 'Billetera'
         verbose_name_plural = 'Billeteras'
-    
+
     def __str__(self):
         return f"Wallet de {self.user.email} - {self.creditos_disponibles} créditos"
-    
+
     def tiene_creditos_suficientes(self, cantidad):
         return self.creditos_disponibles >= cantidad
-    
+
     def descontar_creditos(self, cantidad):
         if self.tiene_creditos_suficientes(cantidad):
             self.creditos_disponibles -= cantidad
             self.save()
             return True
         return False
-    
+
     def agregar_creditos(self, cantidad):
         self.creditos_disponibles += cantidad
         self.save()
@@ -155,7 +155,7 @@ class Suscripcion(models.Model):
         ('expirada', 'Expirada'),
         ('pendiente', 'Pendiente'),
     ]
-    
+
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='suscripciones')
     tipo_suscripcion = models.ForeignKey(TipoSuscripcion, on_delete=models.CASCADE)
     fecha_inicio = models.DateTimeField(default=timezone.now)
@@ -165,36 +165,36 @@ class Suscripcion(models.Model):
     auto_renovar = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         verbose_name = 'Suscripción'
         verbose_name_plural = 'Suscripciones'
         ordering = ['-created_at']
-    
+
     def __str__(self):
         return f"Suscripción {self.tipo_suscripcion.nombre} de {self.user.email}"
-    
+
     def save(self, *args, **kwargs):
         if not self.fecha_fin:
             self.fecha_fin = self.fecha_inicio + timedelta(days=30)
         super().save(*args, **kwargs)
-    
+
     def esta_activa(self):
-        return (self.estado == 'activa' and 
+        return (self.estado == 'activa' and
                 self.fecha_inicio <= timezone.now() <= self.fecha_fin)
-    
+
     def tiradas_disponibles(self):
         if self.esta_activa():
             return max(0, self.tipo_suscripcion.tiradas_incluidas - self.tiradas_usadas)
         return 0
-    
+
     def usar_tirada(self):
         if self.tiradas_disponibles() > 0:
             self.tiradas_usadas += 1
             self.save()
             return True
         return False
-    
+
     def renovar(self):
         if self.auto_renovar and self.estado == 'activa':
             self.fecha_inicio = self.fecha_fin
@@ -210,19 +210,19 @@ class TransaccionCreditos(models.Model):
         ('regalo', 'Regalo'),
         ('reembolso', 'Reembolso'),
     ]
-    
+
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='transacciones_creditos')
     tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
     cantidad = models.IntegerField()
     descripcion = models.TextField()
     paquete_creditos = models.ForeignKey(PaqueteCreditos, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     class Meta:
         verbose_name = 'Transacción de Créditos'
         verbose_name_plural = 'Transacciones de Créditos'
         ordering = ['-created_at']
-    
+
     def __str__(self):
         return f"{self.tipo} - {self.cantidad} créditos - {self.user.email}"
 
@@ -237,12 +237,12 @@ class HistorialConsultas(models.Model):
     interpretacion = models.TextField()
     cartas_resultado = models.JSONField()  # Guardar las cartas y sus posiciones
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     class Meta:
         verbose_name = 'Historial de Consultas'
         verbose_name_plural = 'Historial de Consultas'
         ordering = ['-created_at']
-    
+
     def __str__(self):
         return f"Consulta de {self.user.email} - {self.created_at.strftime('%d/%m/%Y')}"
 
@@ -254,7 +254,7 @@ class PagoSuscripcion(models.Model):
         ('fallido', 'Fallido'),
         ('reembolsado', 'Reembolsado'),
     ]
-    
+
     suscripcion = models.ForeignKey(Suscripcion, on_delete=models.CASCADE, related_name='pagos')
     monto = models.DecimalField(max_digits=10, decimal_places=2)
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='pendiente')
@@ -262,12 +262,12 @@ class PagoSuscripcion(models.Model):
     referencia_externa = models.CharField(max_length=200, blank=True)  # ID de la pasarela de pago
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         verbose_name = 'Pago de Suscripción'
         verbose_name_plural = 'Pagos de Suscripción'
         ordering = ['-created_at']
-    
+
     def __str__(self):
         return f"Pago {self.estado} - ${self.monto} - {self.suscripcion.user.email}"
 
@@ -279,7 +279,7 @@ class PagoCreditos(models.Model):
         ('fallido', 'Fallido'),
         ('reembolsado', 'Reembolsado'),
     ]
-    
+
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='pagos_creditos')
     paquete_creditos = models.ForeignKey(PaqueteCreditos, on_delete=models.CASCADE)
     boton_pago = models.ForeignKey(BotonPago, on_delete=models.SET_NULL, null=True, blank=True)  # Qué botón usó
@@ -287,14 +287,15 @@ class PagoCreditos(models.Model):
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='pendiente')
     metodo_pago = models.CharField(max_length=50, blank=True)
     referencia_externa = models.CharField(max_length=200, blank=True)
+    custom_id = models.CharField(max_length=20, unique=True, null=True, blank=True)
     datos_pago = models.JSONField(default=dict, blank=True)  # Datos adicionales del pago
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         verbose_name = 'Pago de Créditos'
         verbose_name_plural = 'Pagos de Créditos'
         ordering = ['-created_at']
-    
+
     def __str__(self):
         return f"Pago {self.estado} - ${self.monto} - {self.user.email}"
