@@ -157,7 +157,7 @@ def mi_historial_consultas(request):
     return Response(serializer.data)
 
 
-# FUNCIÓN MODIFICADA: Ahora genera URL de pago en lugar de procesar pago
+# FUNCIÓN ACTUALIZADA: Ahora maneja enlaces directos de PayPal
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
 def generar_url_pago(request):
@@ -183,11 +183,20 @@ def generar_url_pago(request):
                 'error': 'Método de pago no disponible en tu país'
             }, status=status.HTTP_400_BAD_REQUEST)
         
+        # NUEVO: Generar referencia según el tipo de enlace
+        metodo = boton_pago.metodo_pago.codigo
+        
+        # Si es un enlace directo de PayPal
+        if metodo == 'paypal' and boton_pago.url_base and 'paypal.com/ncp/payment/' in boton_pago.url_base:
+            # Extraer ID del enlace PayPal
+            paypal_link_id = boton_pago.url_base.split('/')[-1]
+            payment_reference = paypal_link_id
+        else:
+            # Generar referencia normal
+            payment_reference = f"TN-{uuid.uuid4().hex[:12].upper()}"
+        
         # Crear registro de pago PENDIENTE
         with transaction.atomic():
-            # Generar ID único para el pago
-            payment_reference = f"TN-{uuid.uuid4().hex[:12].upper()}"
-            
             pago = PagoCreditos.objects.create(
                 user=request.user,
                 paquete_creditos=paquete,
@@ -200,7 +209,9 @@ def generar_url_pago(request):
                     'pais_usuario': pais_usuario,
                     'timestamp': timezone.now().isoformat(),
                     'user_id': request.user.id,
-                    'user_email': request.user.email
+                    'user_email': request.user.email,
+                    'paypal_link_id': paypal_link_id if metodo == 'paypal' and 'paypal.com/ncp/payment/' in boton_pago.url_base else None,
+                    'es_enlace_directo': 'paypal.com/ncp/payment/' in boton_pago.url_base if boton_pago.url_base else False
                 }
             )
         
@@ -232,46 +243,45 @@ def _generar_url_segun_metodo(boton_pago, pago, request):
     metodo = boton_pago.metodo_pago.codigo
     
     if metodo == 'paypal':
-        # URL de PayPal (sandbox para desarrollo)
-        paypal_params = {
-            'cmd': '_xclick',
-            'business': 'sb-47kcn18204925@business.example.com',  # Email de sandbox PayPal
-            'item_name': f'Tarotnaútica - {pago.paquete_creditos.nombre}',
-            'item_number': pago.referencia_externa,
-            'amount': str(pago.monto),
-            'currency_code': 'USD',
-            'return': f"{success_url}?ref={pago.referencia_externa}",
-            'cancel_return': f"{cancel_url}?ref={pago.referencia_externa}",
-            'notify_url': f"{base_url}api/billing/paypal-ipn/",
-            'custom': pago.referencia_externa
-        }
-        
-        paypal_base = "https://www.sandbox.paypal.com/cgi-bin/webscr"  # Sandbox
-        return f"{paypal_base}?{urlencode(paypal_params)}"
+        # NUEVO: Si es un enlace directo de PayPal, usarlo tal como está
+        if boton_pago.url_base and 'paypal.com/ncp/payment/' in boton_pago.url_base:
+            return boton_pago.url_base  # PayPal ya tiene configurado el retorno
+        else:
+            # Código original para enlaces automáticos
+            paypal_params = {
+                'cmd': '_xclick',
+                'business': 'sb-47kcn18204925@business.example.com',
+                'item_name': f'Tarotnaútica - {pago.paquete_creditos.nombre}',
+                'item_number': pago.referencia_externa,
+                'amount': str(pago.monto),
+                'currency_code': 'USD',
+                'return': f"{success_url}?ref={pago.referencia_externa}",
+                'cancel_return': f"{cancel_url}?ref={pago.referencia_externa}",
+                'notify_url': f"{base_url}api/billing/paypal-ipn/",
+                'custom': pago.referencia_externa
+            }
+            
+            paypal_base = "https://www.sandbox.paypal.com/cgi-bin/webscr"
+            return f"{paypal_base}?{urlencode(paypal_params)}"
     
     elif metodo == 'flow':
-        # URL de Flow (Chile) - requiere implementación con SDK
         flow_params = {
             'commerceOrder': pago.referencia_externa,
             'subject': f'Tarotnaútica - {pago.paquete_creditos.nombre}',
-            'amount': int(pago.monto * 100),  # Flow usa centavos
+            'amount': int(pago.monto * 100),
             'email': pago.user.email,
             'urlReturn': f"{success_url}?ref={pago.referencia_externa}"
         }
-        
-        # Por ahora redirigir a página de transferencia como fallback
         return f"{base_url}payment/bank-transfer/?ref={pago.referencia_externa}"
     
     elif metodo == 'transferencia':
-        # Página interna con datos bancarios
         return f"{base_url}payment/bank-transfer/?ref={pago.referencia_externa}"
     
     else:
-        # Método genérico - usar URL base del botón
         return f"{boton_pago.url_base}?ref={pago.referencia_externa}&amount={pago.monto}"
 
 
-# NUEVA FUNCIÓN: Verificar estado de pago
+# FUNCIÓN ACTUALIZADA: Ahora busca por PayPal link ID y maneja confirmaciones automáticas
 @api_view(['GET'])
 @permission_classes([permissions.AllowAny])
 def verificar_pago(request):
@@ -286,7 +296,34 @@ def verificar_pago(request):
         }, status=status.HTTP_400_BAD_REQUEST)
     
     try:
-        pago = PagoCreditos.objects.get(referencia_externa=payment_ref)
+        # NUEVO: Buscar pago por referencia interna o por PayPal link ID
+        try:
+            # Primero intentar buscar por referencia normal
+            pago = PagoCreditos.objects.get(referencia_externa=payment_ref)
+        except PagoCreditos.DoesNotExist:
+            # Si no existe, buscar por PayPal link ID en datos_pago
+            pago = PagoCreditos.objects.get(
+                datos_pago__paypal_link_id=payment_ref,
+                estado='pendiente'
+            )
+        
+        # NUEVO: Si viene de PayPal con parámetros de éxito, marcar como completado
+        source = request.GET.get('source')
+        status_param = request.GET.get('status')
+        
+        if source == 'paypal' and status_param == 'completed' and pago.estado == 'pendiente':
+            # Procesar pago como completado
+            _procesar_pago_completado(pago)
+            
+            return Response({
+                'success': True,
+                'estado': 'completado',
+                'paquete_nombre': pago.paquete_creditos.nombre,
+                'creditos_agregados': pago.paquete_creditos.cantidad_creditos,
+                'creditos_totales': pago.user.wallet.creditos_disponibles,
+                'monto': str(pago.monto),
+                'fecha_pago': pago.updated_at.isoformat()
+            })
         
         if pago.estado == 'completado':
             # Pago ya procesado
@@ -301,14 +338,12 @@ def verificar_pago(request):
             })
         
         elif pago.estado == 'pendiente':
-            # Por ahora, para testing, simular que se completó después de unos segundos
-            # En producción, aquí verificarías con las APIs externas
-            
-            # Simular verificación con plataforma externa
+            # Para enlaces directos de PayPal, simular verificación automática después de tiempo
             tiempo_transcurrido = (timezone.now() - pago.created_at).total_seconds()
             
-            # Si han pasado más de 10 segundos, marcar como completado (solo para testing)
-            if tiempo_transcurrido > 10:
+            # Si es enlace directo y han pasado más de 10 segundos, marcar como completado
+            es_enlace_directo = pago.datos_pago.get('es_enlace_directo', False)
+            if es_enlace_directo and tiempo_transcurrido > 10:
                 _procesar_pago_completado(pago)
                 return Response({
                     'success': True,
