@@ -12,6 +12,11 @@ urlpatterns = [
     path('register/', views.register_view, name='register'),
     path('logout/', views.logout_view, name='logout'),
     
+    # Recuperación de contraseña
+    path('password-reset/', views.password_reset_view, name='password_reset'),
+    path('password-reset/sent/', views.password_reset_sent_view, name='password_reset_sent'),
+    path('password-reset/confirm/<str:uid>/<str:token>/', views.password_reset_confirm_view, name='password_reset_confirm'),
+    
     # Explorar
     path('sets/', views.sets_list, name='sets_list'),
     path('sets/<int:set_id>/', views.set_detail, name='set_detail'),

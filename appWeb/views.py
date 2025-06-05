@@ -15,6 +15,38 @@ from django.views.decorators.csrf import csrf_exempt
 from .forms import LoginForm, RegisterForm, ProfileForm, ConsultaTarotForm, ContactForm
 
 
+def render_password_reset_email(reset_url, user_email):
+    """Helper para generar HTML del email de reset de password"""
+    from django.template.loader import render_to_string
+    
+    html_content = render_to_string('appWeb/emails/password_reset.html', {
+        'reset_url': reset_url,
+        'user_email': user_email,
+    })
+    
+    # Texto plano como fallback
+    plain_content = f"""
+        Tarotnaútica - Recuperación de Contraseña
+        
+        Hola,
+        
+        Recibimos tu solicitud para restablecer tu contraseña.
+        
+        Haz clic en este enlace para crear una nueva contraseña:
+        {reset_url}
+        
+        Este enlace expira en 1 hora.
+        
+        Si no solicitaste este cambio, ignora este email.
+        
+        Saludos místicos,
+        Equipo Tarotnaútica
+        """
+    
+    return html_content, plain_content
+
+
+
 def process_api_dates(data, date_fields=['created_at', 'updated_at', 'date_joined', 'last_login']):
     """
     Convierte campos de fecha de string a datetime objects en datos de API
@@ -53,7 +85,7 @@ class APIClient:
     """Cliente para consumir nuestra propia API"""
 
     def __init__(self, request=None):
-        self.base_url = 'https://www.tarotnautica.store/api'
+        self.base_url = 'http://127.0.0.1:8000/api'
         self.request = request
 
     def _get_headers(self):
@@ -205,6 +237,137 @@ def logout_view(request):
     logout(request)
     messages.info(request, 'Has cerrado sesión. ¡Hasta pronto!')
     return redirect('appWeb:home')
+
+
+
+
+def password_reset_view(request):
+    """Vista para solicitar recuperación de contraseña"""
+    if request.user.is_authenticated:
+        return redirect('appWeb:home')
+
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        print(f"DEBUG - Email recibido: {email}")
+        
+        if not email:
+            return JsonResponse({
+                'success': False,
+                'error': 'Email es requerido'
+            })
+
+        # Enviar solicitud a la API
+        api = APIClient(request)
+        print(f"DEBUG - Base URL de API: {api.base_url}")
+        print(f"DEBUG - Headers: {api._get_headers()}")
+        
+        # Datos a enviar
+        data = {'email': email}
+        print(f"DEBUG - Datos a enviar: {data}")
+        
+        try:
+            api_response = api.post('/users/password-reset/', data)
+            print(f"DEBUG - Respuesta API: {api_response}")
+            
+            if api_response:
+                print(f"DEBUG - Status code: {api_response.status_code}")
+                print(f"DEBUG - Content type: {api_response.headers.get('content-type', 'unknown')}")
+                print(f"DEBUG - Response content: {api_response.content}")
+                
+                if api_response.status_code == 200:
+                    return JsonResponse({
+                        'success': True,
+                        'message': 'Se ha enviado un enlace de recuperación a tu email'
+                    })
+                else:
+                    try:
+                        error_data = api_response.json()
+                        print(f"DEBUG - Error data parsed: {error_data}")
+                    except:
+                        print(f"DEBUG - No se pudo parsear JSON de error")
+                        
+                    return JsonResponse({
+                        'success': False,
+                        'error': f'Error de API: {api_response.status_code}'
+                    })
+            else:
+                print("DEBUG - No response from API")
+                return JsonResponse({
+                    'success': False,
+                    'error': 'No hay respuesta de la API'
+                })
+                
+        except Exception as e:
+            print(f"DEBUG - Exception: {str(e)}")
+            print(f"DEBUG - Exception type: {type(e)}")
+            import traceback
+            print(f"DEBUG - Traceback: {traceback.format_exc()}")
+            
+            return JsonResponse({
+                'success': False,
+                'error': f'Error de conexión: {str(e)}'
+            })
+
+    return render(request, 'appWeb/auth/password_reset_form.html')
+
+
+def password_reset_sent_view(request):
+    """Vista para mostrar que el email fue enviado"""
+    return render(request, 'appWeb/auth/password_reset_sent.html')
+
+
+def password_reset_confirm_view(request, uid, token):
+    """Vista para confirmar recuperación de contraseña"""
+    if request.user.is_authenticated:
+        return redirect('appWeb:home')
+
+    if request.method == 'POST':
+        new_password = request.POST.get('new_password')
+        new_password_confirm = request.POST.get('new_password_confirm')
+        
+        if not new_password or not new_password_confirm:
+            return JsonResponse({
+                'success': False,
+                'error': 'Todos los campos son requeridos'
+            })
+
+        if new_password != new_password_confirm:
+            return JsonResponse({
+                'success': False,
+                'error': 'Las contraseñas no coinciden'
+            })
+
+        # Enviar confirmación a la API
+        api = APIClient(request)
+        api_response = api.post('/users/password-reset-confirm/', {
+            'uid': uid,
+            'token': token,
+            'new_password': new_password,
+            'new_password_confirm': new_password_confirm
+        })
+
+        if api_response and api_response.status_code == 200:
+            return JsonResponse({
+                'success': True,
+                'message': 'Contraseña actualizada exitosamente'
+            })
+        else:
+            try:
+                error_data = api_response.json() if api_response and api_response.content else {}
+                error_message = error_data.get('error', 'Error al actualizar contraseña')
+            except:
+                error_message = 'Error al actualizar contraseña. Inténtalo de nuevo.'
+            
+            return JsonResponse({
+                'success': False,
+                'error': error_message
+            })
+
+    context = {
+        'uid': uid,
+        'token': token
+    }
+    return render(request, 'appWeb/auth/password_reset_confirm.html', context)
 
 
 def sets_list(request):

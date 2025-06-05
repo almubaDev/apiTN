@@ -1,6 +1,7 @@
 # My file
 auxiliar.txt
 billing.txt
+pypalBotnoapp.txt
 # Python
 *.py[cod]
 __pycache__/

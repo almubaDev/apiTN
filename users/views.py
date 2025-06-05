@@ -13,8 +13,12 @@ from django.conf import settings
 from .models import CustomUser, Profile
 from .serializers import (
     UserRegistrationSerializer, UserLoginSerializer, UserSerializer,
-    ProfileSerializer, PasswordChangeSerializer, ProfileUpdateSerializer
+    ProfileSerializer, PasswordChangeSerializer, ProfileUpdateSerializer,
+    PasswordResetSerializer, PasswordResetConfirmSerializer
 )
+
+from django.template.loader import render_to_string
+from django.core.mail import send_mail
 
 
 @api_view(['POST'])
@@ -159,14 +163,42 @@ def password_reset_request(request):
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         
         # Crear enlace de reset
-        reset_url = f"{settings.FRONTEND_URL}/reset-password/{uid}/{token}/"
+        reset_url = f"{settings.FRONTEND_URL}/password-reset/confirm/{uid}/{token}/"
         
-        # Enviar email (necesitarás configurar SMTP)
+        # Generar HTML usando template de appWeb
+        from django.template.loader import render_to_string
+        
+        html_content = render_to_string('appWeb/emails/password_reset.html', {
+            'reset_url': reset_url,
+            'user_email': email,
+        })
+        
+        # Texto plano como fallback
+        plain_content = f"""
+            Tarotnaútica - Recuperación de Contraseña           
+
+            Hola,           
+
+            Recibimos tu solicitud para restablecer tu contraseña.          
+
+            Haz clic en este enlace para crear una nueva contraseña:
+            {reset_url}         
+
+            Este enlace expira en 1 hora.           
+
+            Si no solicitaste este cambio, ignora este email.           
+
+            Saludos místicos,
+            Equipo Tarotnaútica
+            """
+        
+        # Enviar email con HTML
         send_mail(
-            subject='Recuperación de contraseña - Tarotnaútica',
-            message=f'Usa este enlace para recuperar tu contraseña: {reset_url}',
+            subject='🔮 Recupera tu acceso a Tarotnaútica',
+            message=plain_content,
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[email],
+            html_message=html_content,
             fail_silently=False,
         )
         
@@ -175,6 +207,8 @@ def password_reset_request(request):
         }, status=status.HTTP_200_OK)
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
