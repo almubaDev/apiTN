@@ -11,12 +11,12 @@ def create_user_wallet(sender, instance, created, **kwargs):
     """
     if created:
         wallet, wallet_created = Wallet.objects.get_or_create(user=instance)
-        
+
         # Si se creó una nueva wallet, darle créditos de bienvenida
         if wallet_created:
-            creditos_bienvenida = 3
+            creditos_bienvenida = 5
             wallet.agregar_creditos(creditos_bienvenida)
-            
+
             # Crear registro de transacción
             TransaccionCreditos.objects.create(
                 user=instance,
