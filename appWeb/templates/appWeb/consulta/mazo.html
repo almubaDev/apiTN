@@ -9,39 +9,39 @@
     .tirada-card {
         transition: all 0.3s ease;
     }
-    
+
     .tirada-card:hover {
         transform: translateY(-4px);
         box-shadow: 0 25px 50px rgba(139, 92, 246, 0.15);
     }
-    
+
     .modal {
         transition: all 0.3s ease;
     }
-    
+
     .modal.show {
         opacity: 1;
         pointer-events: all;
     }
-    
+
     .modal.hidden {
         opacity: 0;
         pointer-events: none;
     }
-    
+
     .loading-spinner {
         animation: spin 1s linear infinite;
     }
-    
+
     @keyframes spin {
         from { transform: rotate(0deg); }
         to { transform: rotate(360deg); }
     }
-    
+
     .carta-resultado {
         transition: transform 0.3s ease;
     }
-    
+
     .carta-resultado:hover {
         transform: scale(1.02);
     }
@@ -55,7 +55,7 @@
         padding: 8px;
         overflow: hidden;
     }
-    
+
     .carta-resultado img {
         width: 100%;
         height: 100%;
@@ -163,11 +163,11 @@
 
 {% block content %}
 <div class="min-h-screen bg-gradient-to-br from-cosmic-900 via-cosmic-800 to-primary-900/20">
-    
+
     {% comment %} <!-- Header -->
     <div class="pt-20 pb-8">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            
+
             <!-- Breadcrumb -->
             <nav class="flex items-center space-x-2 text-sm text-cosmic-400 mb-8">
                 <a href="{% url 'appWeb:home' %}" class="hover:text-primary-400 transition-colors">Inicio</a>
@@ -176,7 +176,7 @@
                 <i class="fas fa-chevron-right text-xs"></i>
                 <span class="text-cosmic-200">{{ mazo.nombre }}</span>
             </nav>
-            
+
             <!-- Info del Mazo -->
             <div class="bg-cosmic-800/80 backdrop-blur-sm rounded-2xl border border-cosmic-600 p-8 mb-8">
                 <div class="flex flex-col md:flex-row items-start gap-6">
@@ -192,7 +192,7 @@
                             {{ mazo.descripcion }}
                         </p>
                     </div>
-                    
+
                     <!-- Info de Créditos -->
                     {% if wallet %}
                     <div class="bg-cosmic-700/50 rounded-xl p-6 border border-cosmic-600 min-w-[200px]">
@@ -205,7 +205,7 @@
                             <div class="text-cosmic-300 text-sm">Disponibles</div>
                         </div>
                         {% if wallet.creditos_disponibles < 5 %}
-                        <a href="{% url 'appWeb:comprar_creditos' %}" 
+                        <a href="{% url 'appWeb:comprar_creditos' %}"
                            class="block w-full bg-gradient-to-r from-gold-500 to-primary-500 hover:from-gold-600 hover:to-primary-600 text-white text-center py-2 rounded-lg font-medium transition-all text-sm">
                             <i class="fas fa-plus mr-1"></i>Obtener Más
                         </a>
@@ -216,11 +216,11 @@
             </div>
         </div>
     </div> {% endcomment %}
-    
+
     <!-- Lista de Tiradas -->
     <div class="pb-20">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            
+
             <!-- Section Header -->
             <div class="text-center mb-12">
                 <h2 class="font-mystical text-3xl font-bold text-cosmic-100 mb-4">
@@ -231,17 +231,17 @@
                     Cada tirada revela diferentes aspectos de tu destino. Elige la que resuene con tu pregunta.
                 </p>
             </div>
-            
+
             <!-- Grid de Tiradas -->
             {% if mazo.tiradas %}
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
                 {% for tirada in mazo.tiradas %}
                 <div class="tirada-card bg-cosmic-800/80 backdrop-blur-sm rounded-xl border border-cosmic-600 overflow-hidden hover:border-primary-500/50">
-                    
+
                     <!-- Imagen de la Tirada -->
                     {% if tirada.imagen %}
                     <div class="aspect-[4/3] bg-cosmic-700 overflow-hidden">
-                        <img src="{{ tirada.imagen }}" 
+                        <img src="{{ tirada.imagen }}"
                              alt="{{ tirada.nombre }}"
                              class="w-full h-full object-cover">
                     </div>
@@ -253,10 +253,10 @@
                         </div>
                     </div>
                     {% endif %}
-                    
+
                     <!-- Contenido de la Tirada -->
-                    <div class="p-6">
-                        <div class="flex items-start justify-between mb-4">
+                    <div class="p-4">
+                        <div class="flex flex-col h-full items-start justify-between mb-4">
                             <div class="flex-1">
                                 <h3 class="font-mystical text-xl font-semibold text-cosmic-100 mb-2">
                                     {{ tirada.nombre }}
@@ -271,39 +271,39 @@
                                 <span class="text-xl font-bold text-gold-400">{{ tirada.costo }}</span>
                             </div>
                         </div>
-                        
+
                         <!-- Descripción -->
                         <p class="text-cosmic-300 text-sm leading-relaxed mb-6">
                             {{ tirada.descripcion }}
                         </p>
-                        
+
                         <!-- Items de la Tirada -->
-                        {% if tirada.items %}
-                        <div class="mb-6">
-                            <h4 class="font-medium text-cosmic-200 mb-3 text-sm">
-                                <i class="fas fa-list mr-2"></i>Posiciones:
-                            </h4>
-                            <div class="space-y-2">
-                                {% for item in tirada.items|slice:":3" %}
-                                <div class="flex items-center text-xs text-cosmic-400">
-                                    <div class="w-4 h-4 bg-primary-500/20 rounded-full flex items-center justify-center mr-2 flex-shrink-0">
-                                        <span class="text-primary-400 text-xs">{{ forloop.counter }}</span>
-                                    </div>
-                                    <span class="truncate">{{ item.nombre_posicion }}</span>
-                                </div>
-                                {% endfor %}
-                                {% if tirada.items|length > 3 %}
-                                <p class="text-xs text-cosmic-500 text-center">
-                                    +{{ tirada.items|length|add:"-3" }} posición{{ tirada.items|length|add:"-3"|pluralize:"es" }} más
-                                </p>
-                                {% endif %}
-                            </div>
-                        </div>
-                        {% endif %}
-                        
+                        <!--{% if tirada.items %}-->
+                        <!--<div class="mb-6">-->
+                        <!--    <h4 class="font-medium text-cosmic-200 mb-3 text-sm">-->
+                        <!--        <i class="fas fa-list mr-2"></i>Posiciones:-->
+                        <!--    </h4>-->
+                        <!--    <div class="space-y-2">-->
+                        <!--        {% for item in tirada.items|slice:":3" %}-->
+                        <!--        <div class="flex items-center text-xs text-cosmic-400">-->
+                        <!--            <div class="w-4 h-4 bg-primary-500/20 rounded-full flex items-center justify-center mr-2 flex-shrink-0">-->
+                        <!--                <span class="text-primary-400 text-xs">{{ forloop.counter }}</span>-->
+                        <!--            </div>-->
+                        <!--            <span class="truncate">{{ item.nombre_posicion }}</span>-->
+                        <!--        </div>-->
+                        <!--        {% endfor %}-->
+                        <!--        {% if tirada.items|length > 3 %}-->
+                        <!--        <p class="text-xs text-cosmic-500 text-center">-->
+                        <!--            +{{ tirada.items|length|add:"-3" }} posición{{ tirada.items|length|add:"-3"|pluralize:"es" }} más-->
+                        <!--        </p>-->
+                        <!--        {% endif %}-->
+                        <!--    </div>-->
+                        <!--</div>-->
+                        <!--{% endif %}-->
+
                         <!-- Botón de Realizar Tirada -->
-                        <button onclick="iniciarConsulta({{ tirada.id }}, '{{ tirada.nombre|escapejs }}', {{ tirada.costo }}, '{% if tirada.imagen %}{{ tirada.imagen.url|escapejs }}{% endif %}')" 
-                                class="w-full bg-gradient-to-r from-primary-500 to-mystic-500 hover:from-primary-600 hover:to-mystic-600 text-white py-3 rounded-lg font-medium transition-all duration-300 transform hover:scale-105">
+                        <button onclick="iniciarConsulta({{ tirada.id }}, '{{ tirada.nombre|escapejs }}', {{ tirada.costo }}, '{% if tirada.imagen %}{{ tirada.imagen.url|escapejs }}{% endif %}')"
+                                class="mt-auto w-full bg-gradient-to-r from-primary-500 to-mystic-500 hover:from-primary-600 hover:to-mystic-600 text-white py-3 rounded-lg font-medium transition-all duration-300 transform hover:scale-105">
                             <i class="fas fa-magic mr-2"></i>
                             Realizar tirada por {{ tirada.costo }} crédito{{ tirada.costo|pluralize }}
                         </button>
@@ -339,11 +339,11 @@
                 <br>Actualmente tienes <span id="creditosActuales" class="text-gold-400 font-bold"></span> créditos.
             </p>
             <div class="flex gap-3">
-                <button onclick="cerrarModal('modalCreditosInsuficientes')" 
+                <button onclick="cerrarModal('modalCreditosInsuficientes')"
                         class="flex-1 border border-cosmic-500 text-cosmic-300 py-3 rounded-lg font-medium hover:bg-cosmic-700 transition-colors">
                     Cancelar
                 </button>
-                <a href="{% url 'appWeb:comprar_creditos' %}" 
+                <a href="{% url 'appWeb:comprar_creditos' %}"
                    class="flex-1 bg-gradient-to-r from-gold-500 to-primary-500 hover:from-gold-600 hover:to-primary-600 text-white py-3 rounded-lg font-medium text-center transition-all">
                     <i class="fas fa-plus mr-2"></i>Comprar Créditos
                 </a>
@@ -366,11 +366,11 @@
                 </button>
             </div>
             <p class="text-cosmic-300 mt-2">
-                Tirada: <span id="tiradaNombre" class="text-primary-400 font-medium"></span> - 
+                Tirada: <span id="tiradaNombre" class="text-primary-400 font-medium"></span> -
                 Costo: <span id="tiradaCosto" class="text-gold-400 font-bold"></span> créditos
             </p>
         </div>
-        
+
         <div class="p-6">
             <form id="formConsulta">
                 {% csrf_token %}
@@ -379,8 +379,8 @@
                         <i class="fas fa-question-circle mr-2 text-mystic-400"></i>
                         Escribe tu pregunta al universo
                     </label>
-                    <textarea id="preguntaConsulta" 
-                              name="pregunta" 
+                    <textarea id="preguntaConsulta"
+                              name="pregunta"
                               required
                               maxlength="500"
                               rows="4"
@@ -393,13 +393,13 @@
                         </p>
                     </div>
                 </div>
-                
+
                 <div class="flex gap-3">
-                    <button type="button" onclick="cerrarModal('modalConsulta')" 
+                    <button type="button" onclick="cerrarModal('modalConsulta')"
                             class="flex-1 border border-cosmic-500 text-cosmic-300 py-3 rounded-lg font-medium hover:bg-cosmic-700 transition-colors">
                         Cancelar
                     </button>
-                    <button type="submit" 
+                    <button type="submit"
                             class="flex-1 bg-gradient-to-r from-primary-500 to-mystic-500 hover:from-primary-600 hover:to-mystic-600 text-white py-3 rounded-lg font-medium transition-all">
                         <i class="fas fa-crystal-ball mr-2"></i>
                         Consultar al Oráculo
@@ -413,7 +413,7 @@
 <!-- Modal: Loading y Resultado -->
 <div id="modalResultado" class="modal hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
     <div class="bg-cosmic-800 rounded-2xl border border-cosmic-600 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        
+
         <!-- Loading State -->
         <div id="loadingState" class="p-8 text-center">
             <div class="mb-6">
@@ -427,7 +427,7 @@
                 Las energías cósmicas están alineándose para revelarte tu destino
             </p>
         </div>
-        
+
         <!-- Resultado State -->
         <div id="resultadoState" class="hidden">
             <!-- Header -->
@@ -442,10 +442,10 @@
                     </button>
                 </div>
             </div>
-            
+
             <!-- Contenido del Resultado -->
             <div class="p-6">
-                
+
                 <!-- Pregunta del Consultante -->
                 <div class="mb-8 bg-primary-900/20 border border-primary-500/30 rounded-lg p-4">
                     <h4 class="font-mystical text-lg font-semibold text-primary-300 mb-2">
@@ -454,7 +454,7 @@
                     </h4>
                     <p id="preguntaResultado" class="text-cosmic-200 italic"></p>
                 </div>
-                
+
                 <!-- Cartas Reveladas -->
                 <div class="mb-8">
                     <h4 class="font-mystical text-lg font-semibold text-cosmic-100 mb-4">
@@ -465,7 +465,7 @@
                         <!-- Las cartas se llenarán dinámicamente -->
                     </div>
                 </div>
-                
+
                 <!-- Interpretación de la IA -->
                 <div class="mb-6 bg-cosmic-700/30 rounded-lg p-6 border border-cosmic-600">
                     <h4 class="font-mystical text-lg font-semibold text-cosmic-100 mb-4">
@@ -474,15 +474,15 @@
                     </h4>
                     <div id="interpretacionIA" class="interpretacion-content text-cosmic-200 leading-relaxed"></div>
                 </div>
-                
+
                 <!-- Botones de Acción -->
                 <div class="flex gap-3">
-                    <button onclick="cerrarModal('modalResultado')" 
+                    <button onclick="cerrarModal('modalResultado')"
                             class="flex-1 bg-gradient-to-r from-primary-500 to-mystic-500 hover:from-primary-600 hover:to-mystic-600 text-white py-3 rounded-lg font-medium transition-all">
                         <i class="fas fa-check mr-2"></i>
                         Entendido
                     </button>
-                    <a href="{% url 'appWeb:historial_consultas' %}" 
+                    <a href="{% url 'appWeb:historial_consultas' %}"
                        class="flex-1 border border-cosmic-500 text-cosmic-300 hover:text-cosmic-100 py-3 rounded-lg font-medium text-center transition-colors">
                         <i class="fas fa-history mr-2"></i>
                         Ver Historial
@@ -511,28 +511,28 @@ function parseMarkdown(text) {
     text = text.replace(/^### (.*$)/gm, '<h3>$1</h3>');
     text = text.replace(/^## (.*$)/gm, '<h2>$1</h2>');
     text = text.replace(/^# (.*$)/gm, '<h1>$1</h1>');
-    
+
     // Procesar negritas
     text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    
+
     // Procesar cursivas
     text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
-    
+
     // Procesar saltos de línea dobles como párrafos
     text = text.replace(/\n\n/g, '</p><p>');
     text = '<p>' + text + '</p>';
-    
+
     // Limpiar párrafos vacíos
     text = text.replace(/<p><\/p>/g, '');
     text = text.replace(/<p>\s*<\/p>/g, '');
-    
+
     // Procesar listas
     text = text.replace(/^\- (.*$)/gm, '<li>$1</li>');
     text = text.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
-    
+
     // Procesar saltos de línea simples
     text = text.replace(/\n/g, '<br>');
-    
+
     return text;
 }
 
@@ -543,13 +543,13 @@ function getCSRFToken() {
     if (metaToken) {
         return metaToken.getAttribute('content');
     }
-    
+
     // Luego intentar obtenerlo de un input hidden
     var inputToken = document.querySelector('[name=csrfmiddlewaretoken]');
     if (inputToken) {
         return inputToken.value;
     }
-    
+
     // Finalmente intentar obtenerlo de las cookies
     var cookies = document.cookie.split(';');
     for (var i = 0; i < cookies.length; i++) {
@@ -558,7 +558,7 @@ function getCSRFToken() {
             return cookie.substring('csrftoken='.length);
         }
     }
-    
+
     console.error('CSRF token no encontrado');
     return null;
 }
@@ -566,17 +566,17 @@ function getCSRFToken() {
 // Inicializar eventos cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM cargado');
-    
+
     // Contador de caracteres
     var textarea = document.getElementById('preguntaConsulta');
     var contador = document.getElementById('contadorCaracteres');
-    
+
     if (textarea && contador) {
         textarea.addEventListener('input', function() {
             contador.textContent = this.value.length;
         });
     }
-    
+
     // Formulario de consulta
     var form = document.getElementById('formConsulta');
     if (form) {
@@ -587,7 +587,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Iniciar proceso de consulta - FUNCIÓN CORREGIDA
 function iniciarConsulta(tiradaId, tiradaNombre, tiradaCosto, tiradaImagen) {
     console.log('Iniciando consulta:', tiradaId, tiradaNombre, tiradaCosto);
-    
+
     // Actualizar variable global
     tiradaSeleccionada = {
         id: tiradaId,
@@ -595,18 +595,18 @@ function iniciarConsulta(tiradaId, tiradaNombre, tiradaCosto, tiradaImagen) {
         costo: tiradaCosto,
         imagen: tiradaImagen || ''
     };
-    
+
     // ELIMINAR TODA LA VERIFICACIÓN DE CRÉDITOS AQUÍ
     // Ir directamente al modal de consulta
     document.getElementById('tiradaNombre').textContent = tiradaNombre;
     document.getElementById('tiradaCosto').textContent = tiradaCosto;
-    
+
     var preguntaInput = document.getElementById('preguntaConsulta');
     var contadorElement = document.getElementById('contadorCaracteres');
-    
+
     if (preguntaInput) preguntaInput.value = '';
     if (contadorElement) contadorElement.textContent = '0';
-    
+
     mostrarModal('modalConsulta');
 }
 
@@ -614,32 +614,32 @@ function iniciarConsulta(tiradaId, tiradaNombre, tiradaCosto, tiradaImagen) {
 function realizarConsulta(e) {
     e.preventDefault();
     console.log('Realizando consulta...');
-    
+
     var preguntaElement = document.getElementById('preguntaConsulta');
     if (!preguntaElement) {
         console.error('Elemento preguntaConsulta no encontrado');
         alert('Error: No se puede obtener la pregunta');
         return;
     }
-    
+
     var pregunta = preguntaElement.value.trim();
     console.log('Pregunta:', pregunta);
-    
+
     if (!pregunta) {
         alert('Por favor escribe tu pregunta');
         return;
     }
-    
+
     if (!tiradaSeleccionada.id) {
         console.error('No hay tirada seleccionada');
         alert('Error: No hay tirada seleccionada');
         return;
     }
-    
+
     // Cerrar modal de consulta y mostrar loading
     cerrarModal('modalConsulta');
     mostrarModalResultado();
-    
+
     // Configurar imagen de tirada en loading
     var tiradaImg = document.getElementById('tiradaImagen');
     if (tiradaImg) {
@@ -650,7 +650,7 @@ function realizarConsulta(e) {
             tiradaImg.style.display = 'none';
         }
     }
-    
+
     // Obtener CSRF token
     var csrfToken = getCSRFToken();
     if (!csrfToken) {
@@ -658,12 +658,12 @@ function realizarConsulta(e) {
         cerrarModal('modalResultado');
         return;
     }
-    
+
     console.log('Enviando datos:', {
         tirada_id: tiradaSeleccionada.id,
         pregunta: pregunta
     });
-    
+
     // Realizar llamada AJAX
     fetch(window.location.href, {
         method: 'POST',
@@ -676,16 +676,16 @@ function realizarConsulta(e) {
             'pregunta': pregunta
         })
     })
-    .then(function(response) { 
+    .then(function(response) {
         console.log('Respuesta recibida:', response.status);
         if (!response.ok) {
             throw new Error('Error HTTP: ' + response.status);
         }
-        return response.json(); 
+        return response.json();
     })
     .then(function(data) {
         console.log('Datos recibidos:', data);
-        
+
         if (data.success) {
             mostrarResultado(data.resultado, pregunta);
             // CORREGIDO: Actualizar créditos en la UI usando el ID correcto
@@ -716,42 +716,42 @@ function realizarConsulta(e) {
 // Mostrar resultado
 function mostrarResultado(resultado, pregunta) {
     console.log('Mostrando resultado:', resultado);
-    
+
     // Ocultar loading y mostrar resultado
     var loadingState = document.getElementById('loadingState');
     var resultadoState = document.getElementById('resultadoState');
-    
+
     if (loadingState) loadingState.style.display = 'none';
     if (resultadoState) resultadoState.classList.remove('hidden');
-    
+
     // Llenar pregunta
     var preguntaElement = document.getElementById('preguntaResultado');
     if (preguntaElement) preguntaElement.textContent = pregunta;
-    
+
     // Llenar interpretación con procesamiento de markdown
     var interpretacionElement = document.getElementById('interpretacionIA');
     if (interpretacionElement) {
         var interpretacionTexto = resultado.interpretacion_ia || 'Sin interpretación disponible';
         interpretacionElement.innerHTML = parseMarkdown(interpretacionTexto);
     }
-    
+
     // Llenar cartas
     var cartasGrid = document.getElementById('cartasGrid');
     if (cartasGrid) {
         cartasGrid.innerHTML = '';
-        
+
         var cartas = resultado.cartas || [];
         for (var i = 0; i < cartas.length; i++) {
             var cartaInfo = cartas[i];
             var cartaDiv = document.createElement('div');
             cartaDiv.className = 'carta-resultado bg-cosmic-700/50 rounded-lg border border-cosmic-600 overflow-hidden';
-            
+
             var rotacionClass = cartaInfo.es_invertida ? 'transform rotate-180' : '';
             var badgeClass = cartaInfo.es_invertida ? 'bg-orange-500/20 text-orange-300' : 'bg-green-500/20 text-green-300';
             var iconClass = cartaInfo.es_invertida ? 'undo' : 'arrow-up';
             var orientacionTexto = cartaInfo.es_invertida ? 'Invertida' : 'Derecha';
-            
-            cartaDiv.innerHTML = 
+
+            cartaDiv.innerHTML =
                 '<div class="carta-imagen-container">' +
                     '<img src="' + (cartaInfo.carta.imagen || '') + '" ' +
                          'alt="' + (cartaInfo.carta.nombre || '') + '" ' +
@@ -768,7 +768,7 @@ function mostrarResultado(resultado, pregunta) {
                     '</div>' +
                     '<p class="text-cosmic-400 text-xs leading-relaxed">' + (cartaInfo.descripcion_posicion || '') + '</p>' +
                 '</div>';
-            
+
             cartasGrid.appendChild(cartaDiv);
         }
     }
@@ -799,10 +799,10 @@ function mostrarModalResultado() {
     // Reset states
     var loadingState = document.getElementById('loadingState');
     var resultadoState = document.getElementById('resultadoState');
-    
+
     if (loadingState) loadingState.style.display = 'block';
     if (resultadoState) resultadoState.classList.add('hidden');
-    
+
     mostrarModal('modalResultado');
 }
 

@@ -4,10 +4,10 @@ from django.db import models
 class Set(models.Model):
     nombre = models.CharField(max_length=200)
     descripcion = models.TextField()
-    
+
     def __str__(self):
         return self.nombre
-    
+
     class Meta:
         verbose_name = "Set"
         verbose_name_plural = "Sets"
@@ -18,10 +18,10 @@ class Mazo(models.Model):
     nombre = models.CharField(max_length=200)
     descripcion = models.TextField()
     permite_cartas_invertidas = models.BooleanField(default=True)
-    
+
     def __str__(self):
         return f"{self.set.nombre} - {self.nombre}"
-    
+
     class Meta:
         verbose_name = "Mazo"
         verbose_name_plural = "Mazos"
@@ -33,11 +33,11 @@ class Carta(models.Model):
     nombre = models.CharField(max_length=200)
     imagen = models.ImageField(upload_to='cartas/')
     significado_normal = models.TextField()
-    significado_invertida = models.TextField()
-    
+    significado_invertida = models.TextField(blank=True)
+
     def __str__(self):
         return f"{self.mazo.nombre} - {self.numero}: {self.nombre}"
-    
+
     class Meta:
         verbose_name = "Carta"
         verbose_name_plural = "Cartas"
@@ -52,10 +52,10 @@ class Tirada(models.Model):
     imagen = models.ImageField(upload_to='tiradas/')
     cantidad_cartas = models.IntegerField()
     costo = models.IntegerField(default=0)
-    
+
     def __str__(self):
         return f"{self.mazo.nombre} - {self.nombre}"
-    
+
     class Meta:
         verbose_name = "Tirada"
         verbose_name_plural = "Tiradas"
@@ -66,10 +66,10 @@ class ItemDeTirada(models.Model):
     nombre_posicion = models.CharField(max_length=200)
     descripcion = models.TextField()
     orden = models.IntegerField(default=0)
-    
+
     def __str__(self):
         return f"{self.tirada.nombre} - {self.nombre_posicion}"
-    
+
     class Meta:
         verbose_name = "Item de Tirada"
         verbose_name_plural = "Items de Tirada"

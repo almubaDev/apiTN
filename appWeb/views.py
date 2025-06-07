@@ -406,16 +406,38 @@ def mazos_list(request):
                 mazos_filtrados.append(mazo)
         mazos_data = mazos_filtrados
 
-    # Obtener una carta aleatoria para cada mazo
+    # CORREGIDO: Obtener una carta aleatoria para cada mazo
     if mazos_data:
-        for mazo in mazos_data:
-            cartas_data = api.get('/oraculo/cartas/', {'mazo': mazo['id']})
-            if cartas_data:
-                # Seleccionar una carta aleatoria
-                carta_aleatoria = random.choice(cartas_data)
-                mazo['carta_aleatoria'] = carta_aleatoria
-            else:
+        # Obtener TODAS las cartas de una vez para evitar múltiples llamadas
+        todas_las_cartas = api.get('/oraculo/cartas/')
+
+        if todas_las_cartas:
+            # Crear un diccionario que agrupe las cartas por mazo
+            cartas_por_mazo = {}
+            for carta in todas_las_cartas:
+                mazo_id = carta.get('mazo')
+                if mazo_id not in cartas_por_mazo:
+                    cartas_por_mazo[mazo_id] = []
+                cartas_por_mazo[mazo_id].append(carta)
+
+            # Asignar carta aleatoria a cada mazo
+            for mazo in mazos_data:
+                mazo_id = mazo['id']
+                cartas_del_mazo = cartas_por_mazo.get(mazo_id, [])
+
+                if cartas_del_mazo:
+                    # Seleccionar una carta aleatoria de las cartas específicas del mazo
+                    carta_aleatoria = random.choice(cartas_del_mazo)
+                    mazo['carta_aleatoria'] = carta_aleatoria
+                    print(f"DEBUG: Mazo '{mazo['nombre']}' (ID: {mazo_id}) -> Carta '{carta_aleatoria['nombre']}' (Mazo: {carta_aleatoria.get('mazo')})")
+                else:
+                    mazo['carta_aleatoria'] = None
+                    print(f"DEBUG: Mazo '{mazo['nombre']}' (ID: {mazo_id}) -> Sin cartas disponibles")
+        else:
+            # Si no hay cartas, asignar None a todos los mazos
+            for mazo in mazos_data:
                 mazo['carta_aleatoria'] = None
+                print(f"DEBUG: No hay cartas disponibles en el sistema")
 
     context = {
         'mazos': mazos_data or [],
