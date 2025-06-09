@@ -2,7 +2,13 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    
+    <!-- META TAGS SIMPLES PARA OCULTAR BARRA DEL NAVEGADOR -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#0f172a">
+    
     <title>{% block title %}Tarotnaútica{% endblock %}</title>
     
     <!-- Tailwind CSS with Custom Colors -->
@@ -76,6 +82,18 @@
     <style>
         .font-mystical { font-family: 'Cinzel', serif; }
         .font-body { font-family: 'Inter', sans-serif; }
+
+        /* ESTILOS SIMPLES PARA MÓVIL */
+        body {
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* En móviles, solo un pequeño scroll activa el auto-hide */
+        @media screen and (max-width: 768px) {
+            body {
+                overflow-x: hidden;
+            }
+        }
 
         /* Indicador de scroll móvil - CORREGIDO: esquina inferior derecha */
         .scroll-indicator {
@@ -233,6 +251,19 @@
     
     <!-- Scripts -->
     <script>
+        // AUTO-SCROLL AL CARGAR PARA OCULTAR BARRA DEL NAVEGADOR
+        function autoScrollToHideBar() {
+            if (window.innerWidth <= 768) {
+                // Scroll suficiente para activar auto-hide (generalmente 50-100px)
+                setTimeout(() => {
+                    window.scrollTo({
+                        top: 80,
+                        behavior: 'smooth'
+                    });
+                }, 200);
+            }
+        }
+
         // Cosmic background animation
         function createStars() {
             const starsContainer = document.createElement('div');
@@ -339,6 +370,14 @@
         document.addEventListener('DOMContentLoaded', function() {
             createStars();
             initScrollIndicator();
+            
+            // AUTO-SCROLL PARA OCULTAR BARRA AL CARGAR
+            autoScrollToHideBar();
+        });
+
+        // También después de cargar completamente
+        window.addEventListener('load', () => {
+            setTimeout(autoScrollToHideBar, 300);
         });
 
         // Función para mostrar/ocultar el indicador manualmente (útil para páginas específicas)

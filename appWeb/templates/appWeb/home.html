@@ -18,91 +18,210 @@
     </div>
     
     <div class="relative z-10 text-center px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
-        <!-- Logo místico -->
-        <div class="mb-8 flex justify-center">
-            <div class="w-20 h-20 rounded-full flex items-center justify-center shadow-2xl shadow-primary-500/25">
-                <img src="{% static 'img/logo.png' %}" alt="Tarotnaútica" class="w-20 h-20 object-contain">
+        
+        <!-- VERSIÓN MÓVIL - Usuario autenticado -->
+        {% if user.is_authenticated %}
+        <div class="md:hidden h-screen flex flex-col justify-center py-8">
+            <!-- Header con logo y título lado a lado -->
+            <div class="flex items-center justify-center mb-8">
+                <div class="w-16 h-16 rounded-full flex items-center justify-center shadow-2xl shadow-primary-500/25 mr-4">
+                    <img src="{% static 'img/logo.png' %}" alt="Tarotnaútica" class="w-16 h-16 object-contain">
+                </div>
+                <h1 class="font-mystical text-3xl font-bold text-cosmic-100 leading-tight">
+                    Tarotnaútica
+                </h1>
             </div>
-        </div>
-        
-        <h1 class="font-mystical text-4xl sm:text-5xl lg:text-6xl font-bold text-cosmic-100 mb-6 leading-tight">
-            Navega los <span class="bg-gradient-to-r from-primary-400 to-mystic-400 bg-clip-text text-transparent">Misterios</span> del Cosmos
-        </h1>
-        
-        <p class="text-lg sm:text-xl text-cosmic-300 mb-8 max-w-2xl mx-auto leading-relaxed">
-            Cada consulta es un viaje único a través de coordenadas místicas generadas por el Motor Náutica. 
-            Tu destino no está escrito: está esperando ser descubierto en la sincronicidad del momento perfecto.
-        </p>
-        
-        <!-- CTA Buttons - CORREGIDOS -->
-        <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            {% if user.is_authenticated %}
+            
+            <!-- Botones principales -->
+            <div class="flex flex-col gap-4 mb-8">
                 <!-- Botón principal - Comenzar Consulta -->
                 <a href="{% url 'appWeb:mazos_list' %}" 
-                   class="group relative inline-flex items-center px-8 py-4 bg-gradient-to-r from-primary-500 to-mystic-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:shadow-primary-500/25 transition-all duration-300 transform hover:-translate-y-1 hover:from-primary-600 hover:to-mystic-600 z-10">
-                    <i class="fas fa-magic mr-3 text-lg relative z-10"></i>
-                    <span class="relative z-10">Comenzar Mi Consulta</span>
+                   class="group relative inline-flex items-center justify-center px-6 py-4 bg-gradient-to-r from-primary-500 to-mystic-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:shadow-primary-500/25 transition-all duration-300 transform hover:-translate-y-1 hover:from-primary-600 hover:to-mystic-600">
+                    <i class="fas fa-magic mr-3 text-lg"></i>
+                    <span>Comenzar Mi Consulta</span>
                 </a>
                 
                 <!-- Botón secundario - Obtener Créditos -->
                 <a href="{% url 'appWeb:comprar_creditos' %}" 
-                   class="inline-flex items-center px-8 py-4 border-2 border-gold-500 text-gold-400 font-semibold rounded-xl hover:bg-gold-500/10 hover:border-gold-400 transition-all duration-300">
+                   class="inline-flex items-center justify-center px-6 py-3 border-2 border-gold-500 text-gold-400 font-semibold rounded-xl hover:bg-gold-500/10 hover:border-gold-400 transition-all duration-300">
                     <i class="fas fa-coins mr-3"></i>
                     Obtener Créditos
                 </a>
                 
                 <!-- Botón terciario - Motor Náutica -->
                 <a href="{% url 'appWeb:motor_nautica' %}" 
-                   class="inline-flex items-center px-8 py-4 border-2 border-primary-500 text-primary-400 font-semibold rounded-xl hover:bg-primary-500/10 hover:border-primary-400 transition-all duration-300">
+                   class="inline-flex items-center justify-center px-6 py-3 border-2 border-primary-500 text-primary-400 font-semibold rounded-xl hover:bg-primary-500/10 hover:border-primary-400 transition-all duration-300">
                     <i class="fas fa-cog mr-3"></i>
-                    Descubrir el Motor Náutica
+                    Motor Náutica
                 </a>
-                
-            {% else %}
-                <!-- Usuario no autenticado -->
+            </div>
+            
+            <!-- Estadísticas compactas -->
+            <div class="grid grid-cols-3 gap-3">
+                <div class="text-center bg-cosmic-800/50 rounded-lg p-3 border border-cosmic-600">
+                    <div class="text-lg font-bold text-primary-400 mb-1">2,400+</div>
+                    <div class="text-cosmic-300 text-xs">Consultas</div>
+                </div>
+                <div class="text-center bg-cosmic-800/50 rounded-lg p-3 border border-cosmic-600">
+                    <div class="text-lg font-bold text-mystic-400 mb-1">{{ total_mazos|default:"1" }}</div>
+                    <div class="text-cosmic-300 text-xs">Mazos</div>
+                </div>
+                <div class="text-center bg-cosmic-800/50 rounded-lg p-3 border border-cosmic-600">
+                    <div class="text-lg font-bold text-gold-400 mb-1">300+</div>
+                    <div class="text-cosmic-300 text-xs">Usuarios</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- VERSIÓN MÓVIL - Usuario NO autenticado -->
+        {% if not user.is_authenticated %}
+        <div class="md:hidden h-screen flex flex-col justify-center py-8">
+            <!-- Header con logo y título lado a lado -->
+            <div class="flex items-center justify-center mb-6">
+                <div class="w-16 h-16 rounded-full flex items-center justify-center shadow-2xl shadow-primary-500/25 mr-4">
+                    <img src="{% static 'img/logo.png' %}" alt="Tarotnaútica" class="w-16 h-16 object-contain">
+                </div>
+                <h1 class="font-mystical text-3xl font-bold text-cosmic-100 leading-tight">
+                    Tarotnaútica
+                </h1>
+            </div>
+            
+            <!-- Descripción breve solo para no autenticados -->
+            <p class="text-base text-cosmic-300 mb-8 leading-relaxed">
+                Navega los misterios del cosmos con el Motor Náutica
+            </p>
+            
+            <!-- Botones principales -->
+            <div class="flex flex-col gap-4 mb-8">
                 <!-- Botón principal - Registrarse -->
                 <a href="{% url 'appWeb:register' %}" 
-                   class="group relative inline-flex items-center px-8 py-4 bg-gradient-to-r from-primary-500 to-mystic-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:shadow-primary-500/25 transition-all duration-300 transform hover:-translate-y-1 hover:from-primary-600 hover:to-mystic-600 z-10">
-                    <i class="fas fa-user-plus mr-3 text-lg relative z-10"></i>
-                    <span class="relative z-10">Únete a la Exploración</span>
+                   class="group relative inline-flex items-center justify-center px-6 py-4 bg-gradient-to-r from-primary-500 to-mystic-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:shadow-primary-500/25 transition-all duration-300 transform hover:-translate-y-1 hover:from-primary-600 hover:to-mystic-600">
+                    <i class="fas fa-user-plus mr-3 text-lg"></i>
+                    <span>Únete a la Exploración</span>
                 </a>
                 
                 <!-- Botón secundario - Motor Náutica -->
                 <a href="{% url 'appWeb:motor_nautica' %}" 
-                   class="inline-flex items-center px-8 py-4 border-2 border-primary-500 text-primary-400 font-semibold rounded-xl hover:bg-primary-500/10 hover:border-primary-400 transition-all duration-300">
+                   class="inline-flex items-center justify-center px-6 py-3 border-2 border-primary-500 text-primary-400 font-semibold rounded-xl hover:bg-primary-500/10 hover:border-primary-400 transition-all duration-300">
                     <i class="fas fa-cog mr-3"></i>
-                    Descubrir el Motor Náutica
+                    Motor Náutica
                 </a>
                 
                 <!-- Botón terciario - Login -->
                 <a href="{% url 'appWeb:login' %}" 
-                   class="inline-flex items-center px-6 py-3 text-cosmic-300 hover:text-primary-400 transition-colors font-medium">
+                   class="inline-flex items-center justify-center px-6 py-3 text-cosmic-300 hover:text-primary-400 transition-colors font-medium">
                     <i class="fas fa-sign-in-alt mr-2"></i>
                     ¿Ya tienes cuenta? Inicia sesión
                 </a>
-            {% endif %}
+            </div>
+            
+            <!-- Estadísticas compactas -->
+            <div class="grid grid-cols-3 gap-3">
+                <div class="text-center bg-cosmic-800/50 rounded-lg p-3 border border-cosmic-600">
+                    <div class="text-lg font-bold text-primary-400 mb-1">2,400+</div>
+                    <div class="text-cosmic-300 text-xs">Consultas</div>
+                </div>
+                <div class="text-center bg-cosmic-800/50 rounded-lg p-3 border border-cosmic-600">
+                    <div class="text-lg font-bold text-mystic-400 mb-1">{{ total_mazos|default:"1" }}</div>
+                    <div class="text-cosmic-300 text-xs">Mazos</div>
+                </div>
+                <div class="text-center bg-cosmic-800/50 rounded-lg p-3 border border-cosmic-600">
+                    <div class="text-lg font-bold text-gold-400 mb-1">300+</div>
+                    <div class="text-cosmic-300 text-xs">Usuarios</div>
+                </div>
+            </div>
         </div>
+        {% endif %}
         
-        <!-- Stats -->
-        <div class="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-8">
-            <div class="text-center">
-                <div class="text-3xl font-bold text-primary-400 mb-2">2,400+</div>
-                <div class="text-cosmic-300">Consultas exitosas durante nuestro lanzamiento privado</div>
+        <!-- VERSIÓN DESKTOP - Sin cambios -->
+        <div class="hidden md:block">
+            <!-- Logo místico -->
+            <div class="mb-8 flex justify-center">
+                <div class="w-20 h-20 rounded-full flex items-center justify-center shadow-2xl shadow-primary-500/25">
+                    <img src="{% static 'img/logo.png' %}" alt="Tarotnaútica" class="w-20 h-20 object-contain">
+                </div>
             </div>
-            <div class="text-center">
-                <div class="text-3xl font-bold text-mystic-400 mb-2">{{ total_mazos|default:"1" }}</div>
-                <div class="text-cosmic-300">Mazos Místicos</div>
+            
+            <h1 class="font-mystical text-4xl sm:text-5xl lg:text-6xl font-bold text-cosmic-100 mb-6 leading-tight">
+                Navega los <span class="bg-gradient-to-r from-primary-400 to-mystic-400 bg-clip-text text-transparent">Misterios</span> del Cosmos
+            </h1>
+            
+            <p class="text-lg sm:text-xl text-cosmic-300 mb-8 max-w-2xl mx-auto leading-relaxed">
+                Cada consulta es un viaje único a través de coordenadas místicas generadas por el Motor Náutica. 
+                Tu destino no está escrito: está esperando ser descubierto en la sincronicidad del momento perfecto.
+            </p>
+            
+            <!-- CTA Buttons -->
+            <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                {% if user.is_authenticated %}
+                    <!-- Botón principal - Comenzar Consulta -->
+                    <a href="{% url 'appWeb:mazos_list' %}" 
+                       class="group relative inline-flex items-center px-8 py-4 bg-gradient-to-r from-primary-500 to-mystic-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:shadow-primary-500/25 transition-all duration-300 transform hover:-translate-y-1 hover:from-primary-600 hover:to-mystic-600 z-10">
+                        <i class="fas fa-magic mr-3 text-lg relative z-10"></i>
+                        <span class="relative z-10">Comenzar Mi Consulta</span>
+                    </a>
+                    
+                    <!-- Botón secundario - Obtener Créditos -->
+                    <a href="{% url 'appWeb:comprar_creditos' %}" 
+                       class="inline-flex items-center px-8 py-4 border-2 border-gold-500 text-gold-400 font-semibold rounded-xl hover:bg-gold-500/10 hover:border-gold-400 transition-all duration-300">
+                        <i class="fas fa-coins mr-3"></i>
+                        Obtener Créditos
+                    </a>
+                    
+                    <!-- Botón terciario - Motor Náutica -->
+                    <a href="{% url 'appWeb:motor_nautica' %}" 
+                       class="inline-flex items-center px-8 py-4 border-2 border-primary-500 text-primary-400 font-semibold rounded-xl hover:bg-primary-500/10 hover:border-primary-400 transition-all duration-300">
+                        <i class="fas fa-cog mr-3"></i>
+                        Descubrir el Motor Náutica
+                    </a>
+                    
+                {% else %}
+                    <!-- Usuario no autenticado -->
+                    <!-- Botón principal - Registrarse -->
+                    <a href="{% url 'appWeb:register' %}" 
+                       class="group relative inline-flex items-center px-8 py-4 bg-gradient-to-r from-primary-500 to-mystic-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:shadow-primary-500/25 transition-all duration-300 transform hover:-translate-y-1 hover:from-primary-600 hover:to-mystic-600 z-10">
+                        <i class="fas fa-user-plus mr-3 text-lg relative z-10"></i>
+                        <span class="relative z-10">Únete a la Exploración</span>
+                    </a>
+                    
+                    <!-- Botón secundario - Motor Náutica -->
+                    <a href="{% url 'appWeb:motor_nautica' %}" 
+                       class="inline-flex items-center px-8 py-4 border-2 border-primary-500 text-primary-400 font-semibold rounded-xl hover:bg-primary-500/10 hover:border-primary-400 transition-all duration-300">
+                        <i class="fas fa-cog mr-3"></i>
+                        Descubrir el Motor Náutica
+                    </a>
+                    
+                    <!-- Botón terciario - Login -->
+                    <a href="{% url 'appWeb:login' %}" 
+                       class="inline-flex items-center px-6 py-3 text-cosmic-300 hover:text-primary-400 transition-colors font-medium">
+                        <i class="fas fa-sign-in-alt mr-2"></i>
+                        ¿Ya tienes cuenta? Inicia sesión
+                    </a>
+                {% endif %}
             </div>
-            <div class="text-center">
-                <div class="text-3xl font-bold text-gold-400 mb-2">300+</div>
-                <div class="text-cosmic-300">Usuarios Satisfechos</div>
+            
+            <!-- Stats -->
+            <div class="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-8">
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-primary-400 mb-2">2,400+</div>
+                    <div class="text-cosmic-300">Consultas exitosas durante nuestro lanzamiento privado</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-mystic-400 mb-2">{{ total_mazos|default:"1" }}</div>
+                    <div class="text-cosmic-300">Mazos Místicos</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-gold-400 mb-2">300+</div>
+                    <div class="text-cosmic-300">Usuarios Satisfechos</div>
+                </div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- Features Section -->
-<section class="py-20 bg-cosmic-800/50">
+<!-- Features Section - Solo desktop -->
+<section class="py-20 bg-cosmic-800/50 hidden md:block">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16">
             <h2 class="font-mystical text-3xl sm:text-4xl font-bold text-cosmic-100 mb-4">
@@ -150,9 +269,9 @@
     </div>
 </section>
 
-<!-- Sets Preview Section -->
+<!-- Sets Preview Section - Solo desktop -->
 {% if sets %}
-<section class="py-20">
+<section class="py-20 hidden md:block">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16">
             <h2 class="font-mystical text-3xl sm:text-4xl font-bold text-cosmic-100 mb-4">
@@ -193,8 +312,8 @@
 </section>
 {% endif %}
 
-<!-- CTA Section -->
-<section class="py-20 bg-gradient-to-r from-primary-900/50 to-mystic-900/50">
+<!-- CTA Section - Solo desktop -->
+<section class="py-20 bg-gradient-to-r from-primary-900/50 to-mystic-900/50 hidden md:block">
     <div class="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
         <h2 class="font-mystical text-3xl sm:text-4xl font-bold text-cosmic-100 mb-6">
             ¿Listo para descubrir tu destino?
