@@ -38,12 +38,47 @@
         to { transform: rotate(360deg); }
     }
 
+    /* NUEVO: Estilos para cartas interactivas */
     .carta-resultado {
-        transition: transform 0.3s ease;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        perspective: 1000px;
     }
 
     .carta-resultado:hover {
-        transform: scale(1.02);
+        transform: translateY(-4px);
+        box-shadow: 0 10px 25px rgba(139, 92, 246, 0.3);
+    }
+
+    .carta-flip-container {
+        position: relative;
+        width: 100%;
+        height: 200px;
+        transition: transform 0.6s;
+        transform-style: preserve-3d;
+    }
+
+    .carta-flip-container.flipped {
+        transform: rotateY(180deg);
+    }
+
+    .carta-front, .carta-back {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        backface-visibility: hidden;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .carta-back {
+        transform: rotateY(180deg);
+        background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(217, 70, 239, 0.2) 100%);
+        padding: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
     }
 
     /* Estilos para las cartas del resultado */
@@ -63,9 +98,11 @@
         border-radius: 6px;
     }
 
-    /* Estilos para el contenido markdown */
+    /* Estilos para el contenido markdown - SIN limitaciones de altura */
     .interpretacion-content {
         line-height: 1.8;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
     }
 
     .interpretacion-content h1,
@@ -158,64 +195,36 @@
         font-size: 1.2em;
         margin: 0 0.2rem;
     }
+
+    /* NUEVO: Tooltip para instrucciones de carta */
+    .carta-tooltip {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: rgba(139, 92, 246, 0.9);
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        opacity: 0;
+        transition: opacity 0.3s;
+        pointer-events: none;
+        z-index: 10;
+    }
+
+    .carta-resultado:hover .carta-tooltip {
+        opacity: 1;
+    }
+
+    /* NUEVO: Modal de carta individual */
+    .modal-carta {
+        backdrop-filter: blur(8px);
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="min-h-screen bg-gradient-to-br from-cosmic-900 via-cosmic-800 to-primary-900/20">
-
-    {% comment %} <!-- Header -->
-    <div class="pt-20 pb-8">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-
-            <!-- Breadcrumb -->
-            <nav class="flex items-center space-x-2 text-sm text-cosmic-400 mb-8">
-                <a href="{% url 'appWeb:home' %}" class="hover:text-primary-400 transition-colors">Inicio</a>
-                <i class="fas fa-chevron-right text-xs"></i>
-                <a href="{% url 'appWeb:mazos_list' %}" class="hover:text-primary-400 transition-colors">Mazos</a>
-                <i class="fas fa-chevron-right text-xs"></i>
-                <span class="text-cosmic-200">{{ mazo.nombre }}</span>
-            </nav>
-
-            <!-- Info del Mazo -->
-            <div class="bg-cosmic-800/80 backdrop-blur-sm rounded-2xl border border-cosmic-600 p-8 mb-8">
-                <div class="flex flex-col md:flex-row items-start gap-6">
-                    <div class="flex-1">
-                        <h1 class="font-mystical text-3xl md:text-4xl font-bold text-cosmic-100 mb-3">
-                            {{ mazo.nombre }}
-                        </h1>
-                        <div class="flex items-center text-cosmic-300 mb-4">
-                            <i class="fas fa-layer-group mr-2 text-primary-400"></i>
-                            <span>{{ mazo.set_nombre }}</span>
-                        </div>
-                        <p class="text-cosmic-200 leading-relaxed">
-                            {{ mazo.descripcion }}
-                        </p>
-                    </div>
-
-                    <!-- Info de Créditos -->
-                    {% if wallet %}
-                    <div class="bg-cosmic-700/50 rounded-xl p-6 border border-cosmic-600 min-w-[200px]">
-                        <h3 class="font-mystical text-lg font-semibold text-cosmic-100 mb-3">
-                            <i class="fas fa-wallet mr-2 text-gold-400"></i>
-                            Tus Créditos
-                        </h3>
-                        <div class="text-center mb-4">
-                            <div class="text-3xl font-bold text-gold-400 mb-1" id="creditos-disponibles">{{ wallet.creditos_disponibles }}</div>
-                            <div class="text-cosmic-300 text-sm">Disponibles</div>
-                        </div>
-                        {% if wallet.creditos_disponibles < 5 %}
-                        <a href="{% url 'appWeb:comprar_creditos' %}"
-                           class="block w-full bg-gradient-to-r from-gold-500 to-primary-500 hover:from-gold-600 hover:to-primary-600 text-white text-center py-2 rounded-lg font-medium transition-all text-sm">
-                            <i class="fas fa-plus mr-1"></i>Obtener Más
-                        </a>
-                        {% endif %}
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div> {% endcomment %}
 
     <!-- Lista de Tiradas -->
     <div class="pb-20">
@@ -276,30 +285,6 @@
                         <p class="text-cosmic-300 text-sm leading-relaxed mb-6">
                             {{ tirada.descripcion }}
                         </p>
-
-                        <!-- Items de la Tirada -->
-                        <!--{% if tirada.items %}-->
-                        <!--<div class="mb-6">-->
-                        <!--    <h4 class="font-medium text-cosmic-200 mb-3 text-sm">-->
-                        <!--        <i class="fas fa-list mr-2"></i>Posiciones:-->
-                        <!--    </h4>-->
-                        <!--    <div class="space-y-2">-->
-                        <!--        {% for item in tirada.items|slice:":3" %}-->
-                        <!--        <div class="flex items-center text-xs text-cosmic-400">-->
-                        <!--            <div class="w-4 h-4 bg-primary-500/20 rounded-full flex items-center justify-center mr-2 flex-shrink-0">-->
-                        <!--                <span class="text-primary-400 text-xs">{{ forloop.counter }}</span>-->
-                        <!--            </div>-->
-                        <!--            <span class="truncate">{{ item.nombre_posicion }}</span>-->
-                        <!--        </div>-->
-                        <!--        {% endfor %}-->
-                        <!--        {% if tirada.items|length > 3 %}-->
-                        <!--        <p class="text-xs text-cosmic-500 text-center">-->
-                        <!--            +{{ tirada.items|length|add:"-3" }} posición{{ tirada.items|length|add:"-3"|pluralize:"es" }} más-->
-                        <!--        </p>-->
-                        <!--        {% endif %}-->
-                        <!--    </div>-->
-                        <!--</div>-->
-                        <!--{% endif %}-->
 
                         <!-- Botón de Realizar Tirada -->
                         <button onclick="iniciarConsulta({{ tirada.id }}, '{{ tirada.nombre|escapejs }}', {{ tirada.costo }}, '{% if tirada.imagen %}{{ tirada.imagen.url|escapejs }}{% endif %}')"
@@ -410,9 +395,9 @@
     </div>
 </div>
 
-<!-- Modal: Loading y Resultado -->
+<!-- Modal: Loading y Resultado - CORREGIDO: Altura adaptativa -->
 <div id="modalResultado" class="modal hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div class="bg-cosmic-800 rounded-2xl border border-cosmic-600 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+    <div class="bg-cosmic-800 rounded-2xl border border-cosmic-600 w-full max-w-6xl max-h-[95vh] min-h-[400px] flex flex-col overflow-hidden">
 
         <!-- Loading State -->
         <div id="loadingState" class="p-8 text-center">
@@ -429,9 +414,9 @@
         </div>
 
         <!-- Resultado State -->
-        <div id="resultadoState" class="hidden">
-            <!-- Header -->
-            <div class="p-6 border-b border-cosmic-700">
+        <div id="resultadoState" class="hidden flex flex-col min-h-0">
+            <!-- Header - FIJO -->
+            <div class="flex-shrink-0 p-6 border-b border-cosmic-700">
                 <div class="flex items-center justify-between">
                     <h3 class="font-mystical text-2xl font-bold text-cosmic-100">
                         <i class="fas fa-eye mr-3 text-gold-400"></i>
@@ -443,11 +428,11 @@
                 </div>
             </div>
 
-            <!-- Contenido del Resultado -->
-            <div class="p-6">
+            <!-- Contenido del Resultado - SCROLLEABLE ADAPTATIVO -->
+            <div class="flex-1 overflow-y-auto p-6 space-y-6">
 
                 <!-- Pregunta del Consultante -->
-                <div class="mb-8 bg-primary-900/20 border border-primary-500/30 rounded-lg p-4">
+                <div class="bg-primary-900/20 border border-primary-500/30 rounded-lg p-4">
                     <h4 class="font-mystical text-lg font-semibold text-primary-300 mb-2">
                         <i class="fas fa-question-circle mr-2"></i>
                         Tu Pregunta
@@ -455,11 +440,12 @@
                     <p id="preguntaResultado" class="text-cosmic-200 italic"></p>
                 </div>
 
-                <!-- Cartas Reveladas -->
-                <div class="mb-8">
+                <!-- Cartas Reveladas - NUEVO: Con funcionalidad de volteo -->
+                <div>
                     <h4 class="font-mystical text-lg font-semibold text-cosmic-100 mb-4">
                         <i class="fas fa-cards mr-2 text-gold-400"></i>
                         Cartas Reveladas
+                        <span class="text-sm text-cosmic-400 font-normal ml-2">(Toca una carta para ver su significado)</span>
                     </h4>
                     <div id="cartasGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <!-- Las cartas se llenarán dinámicamente -->
@@ -467,15 +453,19 @@
                 </div>
 
                 <!-- Interpretación de la IA -->
-                <div class="mb-6 bg-cosmic-700/30 rounded-lg p-6 border border-cosmic-600">
+                <div class="bg-cosmic-700/30 rounded-lg p-6 border border-cosmic-600">
                     <h4 class="font-mystical text-lg font-semibold text-cosmic-100 mb-4">
                         <i class="fas fa-crystal-ball mr-2 text-mystic-400"></i>
                         Interpretación Mística
                     </h4>
-                    <div id="interpretacionIA" class="interpretacion-content text-cosmic-200 leading-relaxed"></div>
+                    <div id="interpretacionIA" class="interpretacion-content text-cosmic-200 leading-relaxed">
+                        <!-- El contenido se llenará con JavaScript -->
+                    </div>
                 </div>
+            </div>
 
-                <!-- Botones de Acción -->
+            <!-- Footer - FIJO -->
+            <div class="flex-shrink-0 p-6 border-t border-cosmic-700">
                 <div class="flex gap-3">
                     <button onclick="cerrarModal('modalResultado')"
                             class="flex-1 bg-gradient-to-r from-primary-500 to-mystic-500 hover:from-primary-600 hover:to-mystic-600 text-white py-3 rounded-lg font-medium transition-all">
@@ -493,6 +483,58 @@
     </div>
 </div>
 
+<!-- NUEVO: Modal para significado individual de carta - CORREGIDO -->
+<div id="modalCarta" class="modal hidden fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4 modal-carta">
+    <div class="bg-cosmic-800 rounded-2xl border border-cosmic-600 max-w-lg w-full max-h-[85vh] overflow-y-auto">
+        <div class="p-6 border-b border-cosmic-700">
+            <div class="flex items-center justify-between">
+                <h3 class="font-mystical text-xl font-bold text-cosmic-100" id="cartaModalTitulo">
+                    <i class="fas fa-scroll mr-2 text-gold-400"></i>
+                    Conoce tu Carta
+                </h3>
+                <button onclick="cerrarModal('modalCarta')" class="text-cosmic-400 hover:text-cosmic-200">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="p-6">
+            <!-- Imagen de la carta -->
+            <div class="text-center mb-6">
+                <div class="w-32 h-48 mx-auto mb-3 rounded-lg overflow-hidden bg-cosmic-700 border border-cosmic-600">
+                    <img id="cartaModalImagen" src="" alt="" class="w-full h-full object-contain">
+                </div>
+                <h4 id="cartaModalNombre" class="font-mystical text-lg font-semibold text-cosmic-100 mb-1"></h4>
+                <p id="cartaModalPosicion" class="text-cosmic-400 text-sm mb-3"></p>
+                
+                <!-- Orientación en la tirada -->
+                <div id="cartaModalOrientacion" class="inline-flex items-center px-3 py-1 rounded-full text-sm mb-4">
+                    <i class="fas fa-arrow-up mr-2"></i>
+                    <span>Derecha</span>
+                </div>
+            </div>
+
+            <!-- CORREGIDO: Área para mostrar ambos significados -->
+            <div class="space-y-4">
+                <h5 class="font-semibold text-cosmic-200 text-center">
+                    <i class="fas fa-book-open mr-2 text-mystic-400"></i>
+                    Significados de esta Carta:
+                </h5>
+                <div id="cartaModalSignificado" class="space-y-4">
+                    <!-- Los significados se llenarán con JavaScript -->
+                </div>
+            </div>
+
+            <div class="mt-6 text-center">
+                <button onclick="cerrarModal('modalCarta')" 
+                        class="bg-gradient-to-r from-primary-500 to-mystic-500 hover:from-primary-600 hover:to-mystic-600 text-white px-6 py-3 rounded-lg font-medium transition-all">
+                    <i class="fas fa-check mr-2"></i>Entendido
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -504,6 +546,8 @@ var tiradaSeleccionada = {
     costo: 0,
     imagen: ''
 };
+
+var cartasResultadoGlobal = []; // NUEVO: Para almacenar datos completos de las cartas
 
 // Función para procesar markdown
 function parseMarkdown(text) {
@@ -538,19 +582,16 @@ function parseMarkdown(text) {
 
 // Función para obtener CSRF token
 function getCSRFToken() {
-    // Primero intentar obtenerlo de una meta tag
     var metaToken = document.querySelector('meta[name="csrf-token"]');
     if (metaToken) {
         return metaToken.getAttribute('content');
     }
 
-    // Luego intentar obtenerlo de un input hidden
     var inputToken = document.querySelector('[name=csrfmiddlewaretoken]');
     if (inputToken) {
         return inputToken.value;
     }
 
-    // Finalmente intentar obtenerlo de las cookies
     var cookies = document.cookie.split(';');
     for (var i = 0; i < cookies.length; i++) {
         var cookie = cookies[i].trim();
@@ -561,6 +602,65 @@ function getCSRFToken() {
 
     console.error('CSRF token no encontrado');
     return null;
+}
+
+// CORREGIDO: Función para mostrar modal de carta individual con significados reales
+function mostrarModalCarta(cartaIndex) {
+    if (!cartasResultadoGlobal[cartaIndex]) {
+        console.error('Carta no encontrada:', cartaIndex);
+        return;
+    }
+
+    var cartaInfo = cartasResultadoGlobal[cartaIndex];
+    var carta = cartaInfo.carta;
+
+    // Llenar información del modal
+    document.getElementById('cartaModalNombre').textContent = carta.nombre || 'Carta Desconocida';
+    document.getElementById('cartaModalPosicion').textContent = cartaInfo.posicion || '';
+    document.getElementById('cartaModalImagen').src = carta.imagen || '';
+    document.getElementById('cartaModalImagen').alt = carta.nombre || '';
+
+    // CORREGIDO: Mostrar ambos significados (normal e invertida) de la carta
+    var significadoHTML = '';
+    
+    // Significado normal (siempre se muestra)
+    if (carta.significado_normal) {
+        significadoHTML += '<div class="mb-4">';
+        significadoHTML += '<h6 class="font-semibold text-green-400 mb-2 flex items-center">';
+        significadoHTML += '<i class="fas fa-arrow-up mr-2"></i>Significado Derecho:';
+        significadoHTML += '</h6>';
+        significadoHTML += '<p class="text-cosmic-300 text-sm leading-relaxed">' + carta.significado_normal + '</p>';
+        significadoHTML += '</div>';
+    }
+    
+    // Significado invertido (solo si existe)
+    if (carta.significado_invertida && carta.significado_invertida.trim() !== '') {
+        significadoHTML += '<div class="mb-4">';
+        significadoHTML += '<h6 class="font-semibold text-orange-400 mb-2 flex items-center">';
+        significadoHTML += '<i class="fas fa-undo mr-2"></i>Significado Invertido:';
+        significadoHTML += '</h6>';
+        significadoHTML += '<p class="text-cosmic-300 text-sm leading-relaxed">' + carta.significado_invertida + '</p>';
+        significadoHTML += '</div>';
+    }
+    
+    // Si no hay significados, mostrar mensaje
+    if (!significadoHTML) {
+        significadoHTML = '<p class="text-cosmic-400 text-sm">No hay significados disponibles para esta carta.</p>';
+    }
+    
+    document.getElementById('cartaModalSignificado').innerHTML = significadoHTML;
+
+    // Configurar orientación actual de la carta en la tirada
+    var orientacionElement = document.getElementById('cartaModalOrientacion');
+    if (cartaInfo.es_invertida) {
+        orientacionElement.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm bg-orange-500/20 text-orange-300';
+        orientacionElement.innerHTML = '<i class="fas fa-undo mr-2"></i><span>Salió Invertida en tu tirada</span>';
+    } else {
+        orientacionElement.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-500/20 text-green-300';
+        orientacionElement.innerHTML = '<i class="fas fa-arrow-up mr-2"></i><span>Salió Derecha en tu tirada</span>';
+    }
+
+    mostrarModal('modalCarta');
 }
 
 // Inicializar eventos cuando el DOM esté listo
@@ -584,7 +684,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Iniciar proceso de consulta - FUNCIÓN CORREGIDA
+// Iniciar proceso de consulta
 function iniciarConsulta(tiradaId, tiradaNombre, tiradaCosto, tiradaImagen) {
     console.log('Iniciando consulta:', tiradaId, tiradaNombre, tiradaCosto);
 
@@ -596,7 +696,6 @@ function iniciarConsulta(tiradaId, tiradaNombre, tiradaCosto, tiradaImagen) {
         imagen: tiradaImagen || ''
     };
 
-    // ELIMINAR TODA LA VERIFICACIÓN DE CRÉDITOS AQUÍ
     // Ir directamente al modal de consulta
     document.getElementById('tiradaNombre').textContent = tiradaNombre;
     document.getElementById('tiradaCosto').textContent = tiradaCosto;
@@ -688,7 +787,7 @@ function realizarConsulta(e) {
 
         if (data.success) {
             mostrarResultado(data.resultado, pregunta);
-            // CORREGIDO: Actualizar créditos en la UI usando el ID correcto
+            // Actualizar créditos en la UI
             var creditosElement = document.getElementById('creditos-display') || document.getElementById('creditos-display-mobile');
             if (creditosElement) {
                 creditosElement.textContent = data.creditos_restantes || 0;
@@ -713,7 +812,7 @@ function realizarConsulta(e) {
     });
 }
 
-// Mostrar resultado
+// ACTUALIZADO: Mostrar resultado con cartas interactivas
 function mostrarResultado(resultado, pregunta) {
     console.log('Mostrando resultado:', resultado);
 
@@ -735,7 +834,10 @@ function mostrarResultado(resultado, pregunta) {
         interpretacionElement.innerHTML = parseMarkdown(interpretacionTexto);
     }
 
-    // Llenar cartas
+    // NUEVO: Almacenar cartas globalmente para modal individual
+    cartasResultadoGlobal = resultado.cartas || [];
+
+    // ACTUALIZADO: Llenar cartas con funcionalidad interactiva
     var cartasGrid = document.getElementById('cartasGrid');
     if (cartasGrid) {
         cartasGrid.innerHTML = '';
@@ -744,7 +846,10 @@ function mostrarResultado(resultado, pregunta) {
         for (var i = 0; i < cartas.length; i++) {
             var cartaInfo = cartas[i];
             var cartaDiv = document.createElement('div');
-            cartaDiv.className = 'carta-resultado bg-cosmic-700/50 rounded-lg border border-cosmic-600 overflow-hidden';
+            cartaDiv.className = 'carta-resultado bg-cosmic-700/50 rounded-lg border border-cosmic-600 overflow-hidden relative';
+            
+            // NUEVO: Agregar atributo onclick para mostrar modal
+            cartaDiv.setAttribute('onclick', 'mostrarModalCarta(' + i + ')');
 
             var rotacionClass = cartaInfo.es_invertida ? 'transform rotate-180' : '';
             var badgeClass = cartaInfo.es_invertida ? 'bg-orange-500/20 text-orange-300' : 'bg-green-500/20 text-green-300';
@@ -752,6 +857,7 @@ function mostrarResultado(resultado, pregunta) {
             var orientacionTexto = cartaInfo.es_invertida ? 'Invertida' : 'Derecha';
 
             cartaDiv.innerHTML =
+                '<div class="carta-tooltip">Toca para ver significado</div>' +
                 '<div class="carta-imagen-container">' +
                     '<img src="' + (cartaInfo.carta.imagen || '') + '" ' +
                          'alt="' + (cartaInfo.carta.nombre || '') + '" ' +
@@ -817,7 +923,7 @@ document.addEventListener('click', function(e) {
 // Cerrar modal con ESC
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
-        var modals = ['modalCreditosInsuficientes', 'modalConsulta', 'modalResultado'];
+        var modals = ['modalCreditosInsuficientes', 'modalConsulta', 'modalResultado', 'modalCarta'];
         for (var i = 0; i < modals.length; i++) {
             var modal = document.getElementById(modals[i]);
             if (modal && !modal.classList.contains('hidden')) {
