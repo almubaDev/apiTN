@@ -4,7 +4,108 @@
 {% block title %}Iniciar Sesión - Tarotnaútica{% endblock %}
 
 {% block content %}
-<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-cosmic-900 via-primary-900/30 to-mystic-900/30 py-12 px-4 sm:px-6 lg:px-8">
+<!-- VERSIÓN MÓVIL -->
+<div class="md:hidden min-h-screen flex items-center justify-center bg-gradient-to-br from-cosmic-900 via-primary-900/30 to-mystic-900/30 py-8 px-4">
+    <div class="w-full max-w-sm space-y-6">
+        <!-- Logo y Header compacto -->
+        <div class="text-center">
+            <div class="flex items-center justify-center mb-6">
+                <div class="w-12 h-12 rounded-full flex items-center justify-center shadow-2xl shadow-primary-500/25 mr-3">
+                    <img src="{% static 'img/logo.png' %}" alt="Tarotnaútica" class="w-12 h-12 object-contain">
+                </div>
+                <h2 class="font-mystical text-2xl font-bold text-cosmic-100">
+                    Bienvenido
+                </h2>
+            </div>
+            <p class="text-cosmic-300 text-sm">
+                Reconecta con las energías cósmicas
+            </p>
+        </div>
+
+        <!-- Formulario compacto -->
+        <div class="bg-cosmic-800/80 backdrop-blur-sm rounded-xl p-6 border border-cosmic-600 shadow-xl">
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+
+                <!-- Email Field -->
+                <div class="space-y-2">
+                    <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-cosmic-200">
+                        <i class="fas fa-envelope mr-2 text-primary-400"></i>
+                        Email
+                    </label>
+                    {{ form.email }}
+                    {% if form.email.errors %}
+                        <div class="text-red-400 text-sm mt-1">
+                            {% for error in form.email.errors %}
+                                <p><i class="fas fa-exclamation-circle mr-1"></i>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Password Field -->
+                <div class="space-y-2">
+                    <label for="{{ form.password.id_for_label }}" class="block text-sm font-medium text-cosmic-200">
+                        <i class="fas fa-lock mr-2 text-primary-400"></i>
+                        Contraseña
+                    </label>
+                    {{ form.password }}
+                    {% if form.password.errors %}
+                        <div class="text-red-400 text-sm mt-1">
+                            {% for error in form.password.errors %}
+                                <p><i class="fas fa-exclamation-circle mr-1"></i>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Remember Me y Forgot Password compactos -->
+                <div class="flex items-center justify-between text-sm">
+                    <div class="flex items-center">
+                        {{ form.remember_me }}
+                        <label for="{{ form.remember_me.id_for_label }}" class="ml-2 text-cosmic-300">
+                            Recordar
+                        </label>
+                    </div>
+                    <div>
+                        <!--<a href="{% url 'appWeb:password_reset' %}" class="text-primary-400 hover:text-primary-300 transition-colors">-->
+                        <!--    ¿Olvidaste tu clave?-->
+                        <!--</a>-->
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit"
+                        class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-white bg-gradient-to-r from-primary-500 to-mystic-500 hover:from-primary-600 hover:to-mystic-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl font-semibold">
+                    <i class="fas fa-sign-in-alt mr-2"></i>
+                    Conectar
+                </button>
+            </form>
+
+            <!-- Register Link -->
+            <div class="text-center mt-6 pt-4 border-t border-cosmic-600">
+                <p class="text-cosmic-300 text-sm">
+                    ¿Nuevo en el cosmos?
+                    <a href="{% url 'appWeb:register' %}"
+                       class="font-medium text-primary-400 hover:text-primary-300 transition-colors">
+                        Únete aquí
+                    </a>
+                </p>
+            </div>
+        </div>
+
+        <!-- Footer Info compacto -->
+        <div class="text-center">
+            <p class="text-cosmic-400 text-xs">
+                <i class="fas fa-shield-alt mr-1"></i>
+                Información protegida
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- VERSIÓN DESKTOP - Sin cambios -->
+<div class="hidden md:block min-h-screen flex items-center justify-center bg-gradient-to-br from-cosmic-900 via-primary-900/30 to-mystic-900/30 py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-md w-full space-y-8">
         <!-- Logo y Header -->
         <div class="text-center">
@@ -23,7 +124,7 @@
         <div class="bg-cosmic-800/50 backdrop-blur-sm rounded-2xl p-8 border border-cosmic-600 shadow-xl">
             <form method="post" class="space-y-6">
                 {% csrf_token %}
-                
+
                 <!-- Email Field -->
                 <div class="space-y-2">
                     <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-cosmic-200">
@@ -72,7 +173,7 @@
                 </div>
 
                 <!-- Submit Button -->
-                <button type="submit" 
+                <button type="submit"
                         class="group relative w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-white bg-gradient-to-r from-primary-500 to-mystic-500 hover:from-primary-600 hover:to-mystic-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
                     <span class="absolute left-0 inset-y-0 flex items-center pl-3">
                         <i class="fas fa-sign-in-alt text-primary-200 group-hover:text-white transition-colors"></i>
@@ -96,8 +197,8 @@
             <!-- Register Link -->
             <div class="text-center">
                 <p class="text-cosmic-300">
-                    ¿Nuevo en el cosmos? 
-                    <a href="{% url 'appWeb:register' %}" 
+                    ¿Nuevo en el cosmos?
+                    <a href="{% url 'appWeb:register' %}"
                        class="font-medium text-primary-400 hover:text-primary-300 transition-colors">
                         Únete a la exploración
                     </a>
