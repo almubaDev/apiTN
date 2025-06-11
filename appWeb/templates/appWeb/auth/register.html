@@ -56,21 +56,39 @@
             justify-content: center;
         }
     }
+
+    /* NUEVOS: Estilos para validación de contraseña en paso 2 */
+    .password-strength {
+        margin-top: 0.5rem;
+    }
+
+    .password-requirements {
+        font-size: 0.75rem;
+        margin-top: 0.5rem;
+    }
+
+    .requirement-met {
+        color: #10b981;
+    }
+
+    .requirement-unmet {
+        color: #6b7280;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="min-h-screen bg-gradient-to-br from-cosmic-900 via-primary-900/30 to-mystic-900/30">
     
-    <!-- VERSIÓN MÓVIL - STEPS -->
+    <!-- VERSIÓN MÓVIL - STEPS CORREGIDOS -->
     <div class="md:hidden mobile-register-container flex flex-col">
         
         <!-- Header compacto -->
         <div class="pt-20 pb-4 flex-shrink-0">
             <div class="max-w-sm mx-auto px-4 text-center">
-                <div class="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-gradient-to-br from-primary-500 to-mystic-500 mb-4">
-                    <img src="{% static 'img/logo.png' %}" alt="Tarotnaútica" class="h-10 w-10 object-contain">
-                </div>
+                <!--<div class="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-gradient-to-br from-primary-500 to-mystic-500 mb-4">-->
+                <!--    <img src="{% static 'img/logo.png' %}" alt="Tarotnaútica" class="h-10 w-10 object-contain">-->
+                <!--</div>-->
                 <h2 class="font-mystical text-2xl font-bold text-cosmic-100 mb-2">
                     Únete al Cosmos
                 </h2>
@@ -80,13 +98,12 @@
             </div>
         </div>
 
-        <!-- Indicadores de pasos -->
+        <!-- Indicadores de pasos - AHORA SOLO 3 PASOS -->
         <div class="flex-shrink-0 px-4 mb-4">
             <div class="flex justify-center space-x-2">
                 <div class="step-indicator active w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold" id="indicator-1">1</div>
                 <div class="step-indicator w-8 h-8 rounded-full bg-cosmic-700 flex items-center justify-center text-xs font-bold text-cosmic-400" id="indicator-2">2</div>
                 <div class="step-indicator w-8 h-8 rounded-full bg-cosmic-700 flex items-center justify-center text-xs font-bold text-cosmic-400" id="indicator-3">3</div>
-                <div class="step-indicator w-8 h-8 rounded-full bg-cosmic-700 flex items-center justify-center text-xs font-bold text-cosmic-400" id="indicator-4">4</div>
             </div>
         </div>
 
@@ -104,7 +121,7 @@
                                 <i class="fas fa-user mr-2 text-primary-400"></i>
                                 Información Personal
                             </h3>
-                            <p class="text-cosmic-400 text-sm">Paso 1 de 4</p>
+                            <!--<p class="text-cosmic-400 text-sm">Paso 1 de 3</p>-->
                         </div>
 
                         <div class="space-y-4 mb-6">
@@ -153,19 +170,19 @@
                     </div>
                 </div>
 
-                <!-- Step 2: Contraseña -->
+                <!-- Step 2: Contraseña CON VALIDACIONES INTEGRADAS -->
                 <div class="step-container step-hidden step-content" id="step-2">
                     <div class="bg-cosmic-800/80 backdrop-blur-sm rounded-xl border border-cosmic-600 p-6 h-full flex flex-col justify-center">
                         
-                        <div class="text-center mb-6">
+                        <div class="text-center mb-4">
                             <h3 class="font-mystical text-lg font-semibold text-cosmic-100 mb-2">
                                 <i class="fas fa-lock mr-2 text-primary-400"></i>
                                 Clave Secreta
                             </h3>
-                            <p class="text-cosmic-400 text-sm">Paso 2 de 4</p>
+                            <!--<p class="text-cosmic-400 text-sm">Paso 2 de 3</p>-->
                         </div>
 
-                        <div class="space-y-4 mb-6">
+                        <div class="space-y-4 mb-4">
                             <!-- Password -->
                             <div>
                                 <label for="mobile_password1" class="block text-sm font-medium text-cosmic-200 mb-2">
@@ -185,6 +202,35 @@
                                         <i id="toggleIcon1" class="fas fa-eye"></i>
                                     </button>
                                 </div>
+                                
+                                <!-- Indicador de fuerza de contraseña -->
+                                <div class="password-strength">
+                                    <div class="flex items-center space-x-2 mt-2">
+                                        <div class="flex-1 bg-cosmic-700 rounded-full h-2">
+                                            <div id="strengthBar" class="h-2 rounded-full transition-all duration-300" style="width: 0%;"></div>
+                                        </div>
+                                        <span id="strengthText" class="text-xs text-cosmic-400">Débil</span>
+                                    </div>
+                                </div>
+
+                                <!-- Requisitos de contraseña -->
+                                <div class="password-requirements">
+                                    <div class="grid grid-cols-2 gap-1 text-xs">
+                                        <div id="req-length" class="requirement-unmet">
+                                            <i class="fas fa-circle mr-1"></i>8+ caracteres
+                                        </div>
+                                        <div id="req-uppercase" class="requirement-unmet">
+                                            <i class="fas fa-circle mr-1"></i>Mayúscula
+                                        </div>
+                                        <div id="req-lowercase" class="requirement-unmet">
+                                            <i class="fas fa-circle mr-1"></i>Minúscula
+                                        </div>
+                                        <div id="req-number" class="requirement-unmet">
+                                            <i class="fas fa-circle mr-1"></i>Número
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div id="password1-error" class="text-red-400 text-sm mt-1 hidden">
                                     <i class="fas fa-exclamation-circle mr-1"></i>
                                     <span></span>
@@ -222,7 +268,7 @@
                                 <i class="fas fa-chevron-left mr-2"></i>
                                 Anterior
                             </button>
-                            <button type="button" onclick="nextStep(3)" 
+                            <button type="button" onclick="nextStep(3)" id="passwordNextBtn"
                                     class="flex-1 bg-gradient-to-r from-primary-500 to-mystic-500 hover:from-primary-600 hover:to-mystic-600 text-white py-3 rounded-lg font-medium transition-all duration-300">
                                 Siguiente
                                 <i class="fas fa-chevron-right ml-2"></i>
@@ -231,72 +277,8 @@
                     </div>
                 </div>
 
-                <!-- Step 3: Requisitos de Seguridad -->
+                <!-- Step 3: Términos y Registro (antes step 4) -->
                 <div class="step-container step-hidden step-content" id="step-3">
-                    <div class="bg-cosmic-800/80 backdrop-blur-sm rounded-xl border border-cosmic-600 p-6 h-full flex flex-col justify-center">
-                        
-                        <div class="text-center mb-6">
-                            <h3 class="font-mystical text-lg font-semibold text-cosmic-100 mb-2">
-                                <i class="fas fa-shield-alt mr-2 text-gold-400"></i>
-                                Seguridad Cósmica
-                            </h3>
-                            <p class="text-cosmic-400 text-sm">Paso 3 de 4</p>
-                        </div>
-
-                        <!-- Password Requirements -->
-                        <div class="bg-primary-900/20 border border-primary-500/30 rounded-lg p-4 mb-6">
-                            <h4 class="font-semibold text-primary-300 mb-3 text-sm">
-                                <i class="fas fa-list-check mr-2"></i>
-                                Requisitos de Seguridad:
-                            </h4>
-                            <ul class="space-y-2 text-xs">
-                                <li id="req-length" class="flex items-center text-cosmic-300">
-                                    <i class="fas fa-circle text-cosmic-500 mr-2 text-xs"></i>
-                                    <span>Mínimo 8 caracteres</span>
-                                </li>
-                                <li id="req-uppercase" class="flex items-center text-cosmic-300">
-                                    <i class="fas fa-circle text-cosmic-500 mr-2 text-xs"></i>
-                                    <span>Al menos una letra mayúscula</span>
-                                </li>
-                                <li id="req-lowercase" class="flex items-center text-cosmic-300">
-                                    <i class="fas fa-circle text-cosmic-500 mr-2 text-xs"></i>
-                                    <span>Al menos una letra minúscula</span>
-                                </li>
-                                <li id="req-number" class="flex items-center text-cosmic-300">
-                                    <i class="fas fa-circle text-cosmic-500 mr-2 text-xs"></i>
-                                    <span>Al menos un número</span>
-                                </li>
-                            </ul>
-                        </div>
-
-                        <!-- Indicador de fuerza -->
-                        <div class="mb-6">
-                            <div class="flex items-center space-x-2">
-                                <div class="flex-1 bg-cosmic-700 rounded-full h-2">
-                                    <div id="strengthBar" class="h-2 rounded-full transition-all duration-300" style="width: 0%;"></div>
-                                </div>
-                                <span id="strengthText" class="text-xs text-cosmic-400">Muy débil</span>
-                            </div>
-                        </div>
-
-                        <div class="flex gap-3">
-                            <button type="button" onclick="prevStep(2)" 
-                                    class="flex-1 border border-cosmic-500 text-cosmic-300 py-3 rounded-lg font-medium hover:bg-cosmic-700 transition-colors">
-                                <i class="fas fa-chevron-left mr-2"></i>
-                                Anterior
-                            </button>
-                            <button type="button" onclick="nextStep(4)" id="securityNextBtn"
-                                    class="flex-1 bg-gradient-to-r from-primary-500 to-mystic-500 hover:from-primary-600 hover:to-mystic-600 text-white py-3 rounded-lg font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    disabled>
-                                Siguiente
-                                <i class="fas fa-chevron-right ml-2"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Step 4: Términos y Registro -->
-                <div class="step-container step-hidden step-content" id="step-4">
                     <div class="bg-cosmic-800/80 backdrop-blur-sm rounded-xl border border-cosmic-600 p-6 h-full flex flex-col justify-center">
                         
                         <div class="text-center mb-6">
@@ -304,7 +286,7 @@
                                 <i class="fas fa-check-circle mr-2 text-green-400"></i>
                                 ¡Casi Listo!
                             </h3>
-                            <p class="text-cosmic-400 text-sm">Paso 4 de 4</p>
+                            <!--<p class="text-cosmic-400 text-sm">Paso 3 de 3</p>-->
                         </div>
 
                         <!-- Terms and Conditions -->
@@ -352,7 +334,7 @@
                         </div>
 
                         <div class="flex gap-3">
-                            <button type="button" onclick="prevStep(3)" 
+                            <button type="button" onclick="prevStep(2)" 
                                     class="flex-1 border border-cosmic-500 text-cosmic-300 py-3 rounded-lg font-medium hover:bg-cosmic-700 transition-colors">
                                 <i class="fas fa-chevron-left mr-2"></i>
                                 Anterior
@@ -370,7 +352,7 @@
         </div>
     </div>
 
-    <!-- VERSIÓN DESKTOP - Original sin cambios -->
+    <!-- VERSIÓN DESKTOP - Sin cambios -->
     <div class="hidden md:block py-12 px-4 sm:px-6 lg:px-8">
         <div class="max-w-md w-full mx-auto space-y-8">
             <!-- Logo y Header -->
@@ -551,9 +533,6 @@
 <!-- Modal de Términos y Condiciones -->
 <div id="termsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
     <div class="bg-cosmic-800 rounded-2xl border border-cosmic-600 max-w-4xl w-full max-h-[90vh] overflow-hidden">
-<!-- Modal de Términos y Condiciones -->
-<div id="termsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
-    <div class="bg-cosmic-800 rounded-2xl border border-cosmic-600 max-w-4xl w-full max-h-[90vh] overflow-hidden">
         <!-- Header -->
         <div class="flex items-center justify-between p-6 border-b border-cosmic-600">
             <h3 class="font-mystical text-2xl font-bold text-cosmic-100">
@@ -630,7 +609,7 @@
 {% block extra_js %}
 <script>
 let currentStep = 1;
-const totalSteps = 4;
+const totalSteps = 3; // CAMBIADO DE 4 A 3
 
 // Navegación entre pasos
 function nextStep(step) {
@@ -689,11 +668,9 @@ function validateCurrentStep() {
         case 1:
             return validateStep1();
         case 2:
-            return validateStep2();
+            return validateStep2(); // AHORA INCLUYE VALIDACIÓN DE CONTRASEÑA
         case 3:
-            return validateStep3();
-        case 4:
-            return validateStep4();
+            return validateStep3(); // AHORA ES TÉRMINOS
         default:
             return true;
     }
@@ -745,15 +722,19 @@ function validateStep2() {
         isValid = false;
     }
     
+    // VALIDACIÓN SIMPLIFICADA: Solo requiere básicos para móvil
+    const hasMinLength = password1.length >= 8;
+    const hasValidFormat = password1.length > 0;
+    
+    if (!hasMinLength || !hasValidFormat) {
+        showError('password1-error', 'La contraseña debe tener al menos 8 caracteres');
+        isValid = false;
+    }
+    
     return isValid;
 }
 
 function validateStep3() {
-    const password = document.getElementById('mobile_password1').value;
-    return validatePasswordStrength(password);
-}
-
-function validateStep4() {
     const terminos = document.getElementById('mobile_acepta_terminos').checked;
     
     clearErrors();
@@ -796,7 +777,7 @@ function togglePassword(inputId, iconId) {
     }
 }
 
-// Validación de fuerza de contraseña
+// NUEVA: Validación simplificada de fuerza de contraseña para móvil
 function validatePasswordStrength(password) {
     const requirements = {
         length: password.length >= 8,
@@ -811,40 +792,40 @@ function validatePasswordStrength(password) {
     updateRequirement('req-lowercase', requirements.lowercase);
     updateRequirement('req-number', requirements.number);
     
-    // Calcular puntuación
+    // Calcular puntuación simplificada
     const score = Object.values(requirements).filter(Boolean).length;
-    const strength = ['Muy débil', 'Débil', 'Regular', 'Buena', 'Excelente'][score];
-    const colors = ['bg-red-500', 'bg-red-400', 'bg-yellow-500', 'bg-green-400', 'bg-green-500'];
-    const widths = [0, 25, 50, 75, 100];
+    const strength = ['Muy débil', 'Débil', 'Regular', 'Buena'][Math.min(score, 3)];
+    const colors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-green-500'];
+    const widths = [25, 50, 75, 100];
     
     const strengthBar = document.getElementById('strengthBar');
     const strengthText = document.getElementById('strengthText');
-    const nextBtn = document.getElementById('securityNextBtn');
     
-    strengthBar.className = `h-2 rounded-full transition-all duration-300 ${colors[score]}`;
-    strengthBar.style.width = `${widths[score]}%`;
-    strengthText.textContent = strength;
-    strengthText.className = `text-xs ${score >= 3 ? 'text-green-400' : score >= 2 ? 'text-yellow-400' : 'text-red-400'}`;
+    if (strengthBar && strengthText) {
+        strengthBar.className = `h-2 rounded-full transition-all duration-300 ${colors[Math.min(score, 3)]}`;
+        strengthBar.style.width = `${widths[Math.min(score, 3)]}%`;
+        strengthText.textContent = strength;
+        strengthText.className = `text-xs ${score >= 2 ? 'text-green-400' : score >= 1 ? 'text-yellow-400' : 'text-red-400'}`;
+    }
     
-    // Habilitar botón solo si cumple requisitos mínimos
-    const isValid = score >= 3; // Requiere al menos 3 de 4 requisitos
-    nextBtn.disabled = !isValid;
-    
-    return isValid;
+    // RELAJADO: Para móvil, solo requiere longitud mínima
+    return requirements.length;
 }
 
 function updateRequirement(id, met) {
     const element = document.getElementById(id);
+    if (!element) return;
+    
     const icon = element.querySelector('i');
     
     if (met) {
-        icon.className = 'fas fa-check text-green-400 mr-2 text-xs';
-        element.classList.add('text-green-400');
-        element.classList.remove('text-cosmic-300');
+        icon.className = 'fas fa-check mr-1';
+        element.classList.add('requirement-met');
+        element.classList.remove('requirement-unmet');
     } else {
-        icon.className = 'fas fa-circle text-cosmic-500 mr-2 text-xs';
-        element.classList.remove('text-green-400');
-        element.classList.add('text-cosmic-300');
+        icon.className = 'fas fa-circle mr-1';
+        element.classList.remove('requirement-met');
+        element.classList.add('requirement-unmet');
     }
 }
 
@@ -856,9 +837,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (password1) {
         password1.addEventListener('input', function() {
-            if (currentStep === 3) {
-                validatePasswordStrength(this.value);
-            }
+            validatePasswordStrength(this.value);
         });
     }
     
@@ -872,21 +851,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
-    // Inicializar validación de fuerza en step 3
-    if (currentStep === 3) {
-        const password = document.getElementById('mobile_password1').value;
-        if (password) {
-            validatePasswordStrength(password);
-        }
-    }
 });
 
 // Envío del formulario
 document.getElementById('mobileRegisterForm').addEventListener('submit', function(e) {
     e.preventDefault();
     
-    if (validateStep4()) {
+    if (validateStep3()) {
         // Aquí enviar el formulario real
         this.submit();
     }
