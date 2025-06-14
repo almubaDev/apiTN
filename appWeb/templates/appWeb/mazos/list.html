@@ -8,13 +8,13 @@
     .filter-sidebar {
         transition: all 0.3s ease-in-out;
     }
-    
-    /* MEJORA 1: Filtros móviles que se despliegan correctamente */
+
+    /* FILTROS MÓVILES */
     @media (max-width: 767px) {
         .filter-sidebar {
             display: none;
         }
-        
+
         .filter-sidebar.visible-mobile {
             display: block;
             position: fixed;
@@ -26,7 +26,7 @@
             background: rgba(0, 0, 0, 0.8);
             animation: fadeIn 0.3s ease;
         }
-        
+
         .filter-content {
             position: absolute;
             top: 20px;
@@ -39,353 +39,367 @@
             overflow-y: auto;
             animation: slideUp 0.3s ease;
         }
-        
-        /* Overlay para cerrar filtros en móvil */
-        .mobile-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 40;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s ease;
-        }
-        
-        .mobile-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
     }
-    
+
     @keyframes fadeIn {
         from { opacity: 0; }
         to { opacity: 1; }
     }
-    
+
     @keyframes slideUp {
         from { transform: translateY(20px); opacity: 0; }
         to { transform: translateY(0); opacity: 1; }
     }
-    
-    @media (min-width: 768px) {
-        .filter-sidebar {
-            position: static !important;
-            transform: none !important;
-            opacity: 1 !important;
-            visibility: visible !important;
-            max-height: none !important;
-        }
-    }
-    
+
     .mazo-card {
         transition: all 0.3s ease;
     }
-    
+
     .mazo-card:hover {
         transform: translateY(-8px);
         box-shadow: 0 25px 50px rgba(139, 92, 246, 0.15);
     }
-    
-    .overlay-gradient {
-        background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(217, 70, 239, 0.1) 100%);
+
+    /* CARRUSEL MÓVIL */
+    .carousel-container {
+        scroll-snap-type: x mandatory;
+        scroll-behavior: smooth;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
     }
-    
-    /* MEJORA 2: Layout móvil mejorado - imagen más grande y mejor distribución */
-    @media (max-width: 767px) {
-        .mazo-card-mobile {
-            flex-direction: row !important;
-            align-items: stretch;
-        }
-        
-        .carta-imagen-mobile {
-            width: 100px !important;
-            height: 150px !important;
-            flex-shrink: 0;
-        }
-        
-        .contenido-mazo-mobile {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 1rem;
-        }
-        
-        .info-mazo-mobile {
-            flex: 1;
-        }
-        
-        .acciones-mazo-mobile {
-            margin-top: 1rem;
-            flex-shrink: 0;
-        }
-        
-        /* Ajustar títulos en móvil */
-        .titulo-mazo-mobile {
-            font-size: 1.125rem;
-            line-height: 1.25;
-        }
-        
-        /* Badge de cartas invertidas más compacto */
-        .badge-invertidas-mobile {
-            font-size: 0.75rem;
-            padding: 0.25rem 0.5rem;
-        }
-        
-        .badge-invertidas-mobile .texto-completo {
-            display: none;
-        }
-        
-        .badge-invertidas-mobile .texto-corto {
-            display: inline;
-        }
+
+    .carousel-container::-webkit-scrollbar {
+        display: none;
     }
-    
-    @media (min-width: 768px) {
-        .badge-invertidas-mobile .texto-completo {
-            display: inline;
-        }
-        
-        .badge-invertidas-mobile .texto-corto {
-            display: none;
-        }
+
+    .carousel-slide {
+        scroll-snap-align: start;
+        scroll-snap-stop: always;
+    }
+
+    .carousel-dots {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 12px;
+    }
+
+    .carousel-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: rgba(139, 92, 246, 0.3);
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .carousel-dot.active {
+        background-color: rgba(139, 92, 246, 1);
+        transform: scale(1.2);
+    }
+
+    /* 100VH MÓVIL */
+    .mobile-mazos-container {
+        height: 100vh;
+        height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    /* MODAL DESCRIPCIÓN */
+    .modal-descripcion {
+        backdrop-filter: blur(8px);
+        transition: all 0.3s ease;
+    }
+
+    .modal-descripcion.show {
+        opacity: 1;
+        pointer-events: all;
+    }
+
+    .modal-descripcion.hidden {
+        opacity: 0;
+        pointer-events: none;
     }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="min-h-screen bg-gradient-to-br from-cosmic-900 via-cosmic-800 to-primary-900/20">
-    
-    <!-- Header -->
-    <div class="pt-20 pb-8">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-8">
-                <h1 class="font-mystical text-3xl md:text-5xl font-bold text-cosmic-100 mb-4">
-                    <i class="fas fa-magic mr-3 text-primary-400"></i>
-                    Mazos Místicos
-                </h1>
-                <p class="text-lg text-cosmic-300 max-w-2xl mx-auto">
-                    Explora nuestra colección de mazos sagrados, cada uno con su propia energía y sabiduría ancestral
-                </p>
-            </div>
-            
-            <!-- Mobile Filter Toggle - MEJORADO -->
-            <div class="md:hidden mb-6">
-                <div class="mobile-filter-container">
-                    <div class="flex justify-between items-center">
-                        <div class="text-cosmic-200">
-                            <span class="text-sm">{{ mazos|length }} mazo{{ mazos|length|pluralize }} encontrado{{ mazos|length|pluralize }}</span>
-                        </div>
-                        <button id="toggleFilters" 
-                                class="flex items-center space-x-2 bg-cosmic-800 text-cosmic-200 px-4 py-2 rounded-lg border border-cosmic-600 hover:border-primary-500 transition-colors">
-                            <i class="fas fa-filter"></i>
-                            <span>Filtros</span>
-                            <i class="fas fa-chevron-down transform transition-transform" id="filterChevron"></i>
-                        </button>
-                    </div>
-                    
-                    <!-- Overlay para móvil -->
-                    <div id="mobileOverlay" class="mobile-overlay"></div>
+
+    <!-- VERSIÓN MÓVIL - CARRUSEL COMPACTO -->
+    <div class="md:hidden mobile-mazos-container">
+
+        <!-- Header muy compacto -->
+        <div class="flex-shrink-0 pt-20 pb-2">
+            <div class="px-4">
+                <div class="text-center mb-2">
+                    <h1 class="font-mystical text-xl font-bold text-cosmic-100">
+                        <i class="fas fa-magic mr-2 text-primary-400"></i>
+                        Mazos Místicos
+                    </h1>
+                </div>
+
+                <div class="flex justify-between items-center">
+                    <span class="text-cosmic-200 text-sm">{{ mazos|length }} mazos</span>
+                    <button id="toggleFilters"
+                            class="bg-cosmic-800 text-cosmic-200 px-3 py-1 rounded-lg border border-cosmic-600 text-sm">
+                        <i class="fas fa-filter mr-1"></i>Filtros
+                    </button>
                 </div>
             </div>
         </div>
-    </div>
-    
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
-        <div class="flex flex-col md:flex-row gap-8">
-            
-            <!-- Sidebar de Filtros - CORREGIDO para móvil -->
-            <div class="md:w-80 flex-shrink-0">
-                <div id="filterSidebar" class="filter-sidebar bg-cosmic-800/80 backdrop-blur-sm rounded-xl border border-cosmic-600 overflow-hidden">
-                    
-                    <div class="filter-content md:relative md:top-auto md:left-auto md:right-auto md:bottom-auto md:bg-transparent md:border-0 md:rounded-none md:animation-none">
-                        <!-- Sidebar Header -->
-                        <div class="p-6 border-b border-cosmic-700">
-                            <div class="flex items-center justify-between">
-                                <h3 class="font-mystical text-xl font-semibold text-cosmic-100">
-                                    <i class="fas fa-stream mr-2 text-primary-400"></i>
-                                    Filtrar por Sets
-                                </h3>
-                                <button class="md:hidden text-cosmic-400 hover:text-cosmic-200" onclick="toggleMobileFilters()">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-                            <p class="text-cosmic-400 text-sm mt-2">Selecciona los sets que quieres explorar</p>
-                        </div>
-                        
-                        <!-- Filtros por Sets -->
-                        <div class="p-6">
-                            <form method="GET" id="filterForm">
-                                
-                                <!-- Botones de Control -->
-                                <div class="flex gap-2 mb-4">
-                                    <button type="button" onclick="selectAllSets()" 
-                                            class="flex-1 text-xs bg-primary-500/20 text-primary-300 px-3 py-2 rounded-lg hover:bg-primary-500/30 transition-colors">
-                                        <i class="fas fa-check-double mr-1"></i>
-                                        Todos
-                                    </button>
-                                    <button type="button" onclick="clearAllSets()" 
-                                            class="flex-1 text-xs bg-cosmic-700 text-cosmic-300 px-3 py-2 rounded-lg hover:bg-cosmic-600 transition-colors">
-                                        <i class="fas fa-times mr-1"></i>
-                                        Limpiar
-                                    </button>
-                                </div>
-                                
-                                <!-- Lista de Sets -->
-                                <div class="space-y-3 max-h-96 overflow-y-auto">
-                                    {% for set in sets %}
-                                    <label class="flex items-start space-x-3 p-3 rounded-lg hover:bg-cosmic-700/50 transition-colors cursor-pointer group">
-                                        <input type="checkbox" 
-                                               name="sets" 
-                                               value="{{ set.id }}" 
-                                               {% if set.id|stringformat:"s" in selected_sets %}checked{% endif %}
-                                               onchange="updateFilters()"
-                                               class="mt-1 rounded bg-cosmic-700 border-cosmic-600 text-primary-500 focus:ring-primary-500 focus:ring-offset-cosmic-800">
-                                        <div class="flex-1 min-w-0">
-                                            <h4 class="font-medium text-cosmic-100 group-hover:text-primary-300 transition-colors">
-                                                {{ set.nombre }}
-                                            </h4>
-                                            <p class="text-xs text-cosmic-400 mt-1">
-                                                {{ set.descripcion }}
-                                            </p>
-                                        </div>
-                                    </label>
-                                    {% empty %}
-                                    <div class="text-center py-4 text-cosmic-400">
-                                        <i class="fas fa-search text-2xl mb-2"></i>
-                                        <p>No hay sets disponibles</p>
-                                    </div>
-                                    {% endfor %}
-                                </div>
-                                
-                                <!-- Botón de Aplicar (solo mobile) -->
-                                <div class="md:hidden mt-6 pt-4 border-t border-cosmic-700">
-                                    <button type="button" onclick="applyFiltersAndClose()" 
-                                            class="w-full bg-gradient-to-r from-primary-500 to-mystic-500 text-white py-3 rounded-lg font-medium">
-                                        <i class="fas fa-check mr-2"></i>
-                                        Aplicar Filtros
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Contenido Principal -->
-            <div class="flex-1 min-w-0">
-                
-                <!-- Resultados Header -->
-                <div class="hidden md:flex items-center justify-between mb-6">
-                    <div class="text-cosmic-200">
-                        <span class="text-lg font-medium">{{ mazos|length }} mazo{{ mazos|length|pluralize }} disponible{{ mazos|length|pluralize }}</span>
-                        {% if selected_sets %}
-                        <div class="flex flex-wrap gap-2 mt-2">
-                            {% for set in sets %}
-                                {% if set.id|stringformat:"s" in selected_sets %}
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs bg-primary-500/20 text-primary-300 border border-primary-500/30">
-                                    {{ set.nombre }}
-                                    <button type="button" onclick="removeSetFilter('{{ set.id }}')" class="ml-2 hover:text-primary-100">
-                                        <i class="fas fa-times text-xs"></i>
-                                    </button>
+
+        <!-- Carrusel optimizado -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            {% if mazos %}
+            <div class="carousel-container flex overflow-x-auto gap-2 px-3 flex-1" id="mazosCarousel">
+                {% for mazo in mazos %}
+                <div class="carousel-slide flex-shrink-0 w-80">
+                    <div class="bg-cosmic-800/80 backdrop-blur-sm rounded-xl border border-cosmic-600 h-full flex flex-col p-2">
+
+                        <!-- Nombre centrado -->
+                        <div class="text-center mb-1">
+                            <h3 class="font-mystical text-base font-semibold text-cosmic-100 leading-tight">
+                                {{ mazo.nombre}}
+                            </h3>
+                            <div class="flex justify-center gap-1 mt-1">
+                                {% if mazo.permite_cartas_invertidas %}
+                                <span class="px-1 py-0.5 rounded text-xs bg-green-500/20 text-green-300">
+                                    Admite Invertidas
                                 </span>
                                 {% endif %}
-                            {% endfor %}
+                                <span class="px-1 py-0.5 rounded text-xs bg-primary-500/20 text-primary-300">
+                                    {{ mazo.set_nombre}}
+                                </span>
+                            </div>
                         </div>
-                        {% endif %}
+
+                        <!-- Imagen más grande -->
+                        <div class="flex justify-center mb-1">
+                            <div class="class="w-[180px] aspect-[1/3]  bg-gradient-to-br from-primary-500/20 to-mystic-500/20 rounded-lg overflow-hidden border border-cosmic-600">
+                                {% if mazo.carta_aleatoria %}
+                                    <img src="{{ mazo.carta_aleatoria.imagen }}"
+                                         alt="{{ mazo.carta_aleatoria.nombre }}"
+                                         class="w-[150px] h-[290px] object-contain"
+                                         oncontextmenu="return false;"
+                                         draggable="false">
+                                {% else %}
+                                    <div class="w-full h-full bg-gradient-to-br from-cosmic-700 to-cosmic-800 flex items-center justify-center">
+                                        <i class="fas fa-magic text-primary-400"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Botón descripción -->
+                        <div class="mb-1">
+                            <button onclick="abrirDescripcionModal('{{ mazo.id }}', `{{ mazo.nombre|escapejs }}`, `{{ mazo.descripcion|escapejs }}`)"
+                                    class="w-full bg-cosmic-700/30 hover:bg-cosmic-700/50 border border-cosmic-600 text-primary-400 py-2 rounded-lg text-sm transition-all">
+                                <i class="fas fa-book-open mr-1"></i>
+                                Descripción
+                            </button>
+                        </div>
+
+                        <!-- Botón consultar -->
+                        <div class="mt-auto">
+                            <a href="{% url 'appWeb:consulta_mazo' mazo.id %}"
+                               class="block w-full bg-gradient-to-r from-primary-500 to-mystic-500 hover:from-primary-600 hover:to-mystic-600 text-white text-center py-3 rounded-lg font-medium transition-all text-sm">
+                                <i class="fas fa-magic mr-1"></i>
+                                Consultar
+                            </a>
+                        </div>
                     </div>
                 </div>
-                
-                <!-- Lista de Mazos - CORREGIDO layout móvil -->
-                <div class="space-y-6">
+                {% endfor %}
+            </div>
+
+            <!-- Dots abajo -->
+            <div class="flex-shrink-0 py-2">
+                <div class="carousel-dots" id="carouselDots">
                     {% for mazo in mazos %}
-                    <div class="mazo-card bg-cosmic-800/80 backdrop-blur-sm rounded-xl border border-cosmic-600 overflow-hidden hover:border-primary-500/50 transition-all duration-300 w-full">
-                        
-                        <!-- Layout Horizontal mejorado para móvil -->
-                        <div class="mazo-card-mobile flex flex-col md:flex-row items-stretch">
-                            
-                            <!-- Columna 1: Imagen de Carta - MEJORADA -->
-                            <div class="carta-imagen-mobile md:w-32 w-100 h-150 md:h-40 flex-shrink-0 relative overflow-hidden flex justify-center md:justify-start p-4 md:p-0">
-                                <div class="w-full h-full bg-gradient-to-br from-primary-500/20 to-mystic-500/20 flex items-center justify-center rounded-lg md:rounded-none">
-                                    {% if mazo.carta_aleatoria %}
-                                        <!-- Imagen real de la carta -->
-                                        <img src="{{ mazo.carta_aleatoria.imagen }}" 
-                                             alt="{{ mazo.carta_aleatoria.nombre }}"
-                                             class="w-full h-full object-contain carta-imagen rounded-lg md:rounded-none"
-                                             oncontextmenu="return false;"
-                                             draggable="false">
-                                    {% else %}
-                                        <!-- Imagen placeholder con patrón místico -->
-                                        <div class="w-full h-full bg-gradient-to-br from-cosmic-700 to-cosmic-800 flex items-center justify-center relative rounded-lg md:rounded-none">
-                                            <div class="absolute inset-0 bg-gradient-to-br from-primary-500/10 to-mystic-500/10 rounded-lg md:rounded-none"></div>
-                                            <div class="relative z-10 text-center">
-                                                <i class="fas fa-magic text-2xl text-primary-400 mb-2"></i>
-                                                <div class="text-xs text-cosmic-300 font-medium">{{ mazo.nombre|truncatewords:2 }}</div>
-                                            </div>
-                                            <!-- Patrón decorativo -->
-                                            <div class="absolute top-2 left-2 w-3 h-3 border border-gold-400/30 rounded-full"></div>
-                                            <div class="absolute bottom-2 right-2 w-2 h-2 bg-primary-400/30 rounded-full"></div>
-                                            <div class="absolute top-1/2 right-2 w-1 h-1 bg-mystic-400/50 rounded-full"></div>
-                                        </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            
-                            <!-- Columna 2: Contenido completo - MEJORADO -->
-                            <div class="contenido-mazo-mobile flex-1 flex flex-col justify-between md:flex-row md:items-stretch">
-                                
-                                <!-- Información Principal -->
-                                <div class="info-mazo-mobile flex-1 p-4 md:p-6">
-                                    <!-- Nombre del Mazo -->
-                                    <h3 class="titulo-mazo-mobile font-mystical text-lg md:text-xl font-semibold text-cosmic-100 mb-2 leading-tight">
-                                        {{ mazo.nombre }}
+                    <div class="carousel-dot {% if forloop.first %}active{% endif %}" data-slide="{{ forloop.counter0 }}"></div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <div class="flex-1 flex items-center justify-center">
+                <div class="text-center">
+                    <i class="fas fa-search text-3xl text-cosmic-400 mb-2"></i>
+                    <p class="text-cosmic-200">No hay mazos disponibles</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- VERSIÓN DESKTOP - SIN CAMBIOS -->
+    <div class="hidden md:block">
+        <div class="pt-20 pb-8">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-8">
+                    <h1 class="font-mystical text-3xl md:text-5xl font-bold text-cosmic-100 mb-4">
+                        <i class="fas fa-magic mr-3 text-primary-400"></i>
+                        Mazos Místicos
+                    </h1>
+                    <p class="text-lg text-cosmic-300 max-w-2xl mx-auto">
+                        Explora nuestra colección de mazos sagrados, cada uno con su propia energía y sabiduría ancestral
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
+            <div class="flex flex-col md:flex-row gap-8">
+
+                <!-- Sidebar de Filtros -->
+                <div class="md:w-80 flex-shrink-0">
+                    <div id="filterSidebar" class="filter-sidebar bg-cosmic-800/80 backdrop-blur-sm rounded-xl border border-cosmic-600 overflow-hidden">
+                        <div class="filter-content">
+                            <div class="p-6 border-b border-cosmic-700">
+                                <div class="flex items-center justify-between">
+                                    <h3 class="font-mystical text-xl font-semibold text-cosmic-100">
+                                        <i class="fas fa-stream mr-2 text-primary-400"></i>
+                                        Filtrar por Sets
                                     </h3>
-                                    
-                                    <!-- Nombre del Set -->
-                                    <div class="flex items-center text-sm text-cosmic-400 mb-2">
-                                        <i class="fas fa-layer-group mr-2"></i>
-                                        <span>{{ mazo.set_nombre }}</span>
-                                    </div>
-                                    
-                                    <!-- Descripción del Mazo -->
-                                    <p class="text-cosmic-300 text-sm leading-relaxed">
-                                        {{ mazo.descripcion }}
-                                    </p>
+                                    <button class="md:hidden text-cosmic-400 hover:text-cosmic-200" onclick="toggleMobileFilters()">
+                                        <i class="fas fa-times"></i>
+                                    </button>
                                 </div>
-                                
-                                <!-- Características y Acción -->
-                                <div class="acciones-mazo-mobile md:w-64 flex-shrink-0 p-4 md:p-6 flex flex-col justify-center space-y-3">
-                                    
-                                    <!-- Característica de Cartas Invertidas -->
-                                    {% if mazo.permite_cartas_invertidas %}
-                                    <div class="flex justify-center md:justify-end">
-                                        <span class="badge-invertidas-mobile inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-500/20 text-green-300 border border-green-500/30">
-                                            <i class="fas fa-sync-alt mr-1"></i>
-                                            <span class="texto-corto">Invertidas</span>
-                                            <span class="texto-completo">Incluye significado de cartas invertidas</span>
-                                        </span>
+                                <p class="text-cosmic-400 text-sm mt-2">Selecciona los sets que quieres explorar</p>
+                            </div>
+
+                            <div class="p-6">
+                                <form method="GET" id="filterForm">
+                                    <div class="flex gap-2 mb-4">
+                                        <button type="button" onclick="selectAllSets()"
+                                                class="flex-1 text-xs bg-primary-500/20 text-primary-300 px-3 py-2 rounded-lg hover:bg-primary-500/30 transition-colors">
+                                            <i class="fas fa-check-double mr-1"></i>Todos
+                                        </button>
+                                        <button type="button" onclick="clearAllSets()"
+                                                class="flex-1 text-xs bg-cosmic-700 text-cosmic-300 px-3 py-2 rounded-lg hover:bg-cosmic-600 transition-colors">
+                                            <i class="fas fa-times mr-1"></i>Limpiar
+                                        </button>
                                     </div>
+
+                                    <div class="space-y-3 max-h-96 overflow-y-auto">
+                                        {% for set in sets %}
+                                        <label class="flex items-start space-x-3 p-3 rounded-lg hover:bg-cosmic-700/50 transition-colors cursor-pointer group">
+                                            <input type="checkbox"
+                                                   name="sets"
+                                                   value="{{ set.id }}"
+                                                   {% if set.id|stringformat:"s" in selected_sets %}checked{% endif %}
+                                                   onchange="updateFilters()"
+                                                   class="mt-1 rounded bg-cosmic-700 border-cosmic-600 text-primary-500 focus:ring-primary-500 focus:ring-offset-cosmic-800">
+                                            <div class="flex-1 min-w-0">
+                                                <h4 class="font-medium text-cosmic-100 group-hover:text-primary-300 transition-colors">
+                                                    {{ set.nombre }}
+                                                </h4>
+                                                <p class="text-xs text-cosmic-400 mt-1">
+                                                    {{ set.descripcion }}
+                                                </p>
+                                            </div>
+                                        </label>
+                                        {% empty %}
+                                        <div class="text-center py-4 text-cosmic-400">
+                                            <i class="fas fa-search text-2xl mb-2"></i>
+                                            <p>No hay sets disponibles</p>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+
+                                    <div class="md:hidden mt-6 pt-4 border-t border-cosmic-700">
+                                        <button type="button" onclick="applyFiltersAndClose()"
+                                                class="w-full bg-gradient-to-r from-primary-500 to-mystic-500 text-white py-3 rounded-lg font-medium">
+                                            <i class="fas fa-check mr-2"></i>Aplicar Filtros
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contenido Principal Desktop -->
+                <div class="flex-1 min-w-0">
+                    <div class="hidden md:flex items-center justify-between mb-6">
+                        <div class="text-cosmic-200">
+                            <span class="text-lg font-medium">{{ mazos|length }} mazo{{ mazos|length|pluralize }} disponible{{ mazos|length|pluralize }}</span>
+                            {% if selected_sets %}
+                            <div class="flex flex-wrap gap-2 mt-2">
+                                {% for set in sets %}
+                                    {% if set.id|stringformat:"s" in selected_sets %}
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs bg-primary-500/20 text-primary-300 border border-primary-500/30">
+                                        {{ set.nombre }}
+                                        <button type="button" onclick="removeSetFilter('{{ set.id }}')" class="ml-2 hover:text-primary-100">
+                                            <i class="fas fa-times text-xs"></i>
+                                        </button>
+                                    </span>
                                     {% endif %}
-                                    
-                                    <!-- Botón de Acción -->
-                                    <div class="flex justify-center md:justify-end">
-                                        <a href="{% url 'appWeb:consulta_mazo' mazo.id %}" 
-                                           class="inline-flex items-center bg-gradient-to-r from-primary-500 to-mystic-500 hover:from-primary-600 hover:to-mystic-600 text-white px-4 md:px-6 py-2 md:py-3 rounded-lg font-medium transition-all duration-300 transform hover:scale-105">
-                                            <i class="fas fa-magic mr-2"></i>
-                                            Consultar
-                                        </a>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="space-y-6">
+                        {% for mazo in mazos %}
+                        <div class="mazo-card bg-cosmic-800/80 backdrop-blur-sm rounded-xl border border-cosmic-600 overflow-hidden hover:border-primary-500/50 transition-all duration-300 w-full">
+                            <div class="flex flex-col md:flex-row items-stretch">
+                                <div class="md:w-32 flex-shrink-0 relative overflow-hidden flex justify-center p-4 md:p-0">
+                                    <div class="w-full h-full bg-gradient-to-br from-primary-500/20 to-mystic-500/20 flex items-center justify-center rounded-lg md:rounded-none">
+                                        {% if mazo.carta_aleatoria %}
+                                            <img src="{{ mazo.carta_aleatoria.imagen }}"
+                                                 alt="{{ mazo.carta_aleatoria.nombre }}"
+                                                 class="w-full h-full object-contain rounded-lg md:rounded-none"
+                                                 oncontextmenu="return false;"
+                                                 draggable="false">
+                                        {% else %}
+                                            <div class="w-full h-full bg-gradient-to-br from-cosmic-700 to-cosmic-800 flex items-center justify-center relative rounded-lg md:rounded-none">
+                                                <i class="fas fa-magic text-2xl text-primary-400"></i>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="flex-1 flex flex-col justify-between md:flex-row md:items-stretch">
+                                    <div class="flex-1 p-4 md:p-6">
+                                        <h3 class="font-mystical text-lg md:text-xl font-semibold text-cosmic-100 mb-2 leading-tight">
+                                            {{ mazo.nombre }}
+                                        </h3>
+                                        <div class="flex items-center text-sm text-cosmic-400 mb-2">
+                                            <i class="fas fa-layer-group mr-2"></i>
+                                            <span>{{ mazo.set_nombre }}</span>
+                                        </div>
+                                        <p class="text-cosmic-300 text-sm leading-relaxed">
+                                            {{ mazo.descripcion }}
+                                        </p>
+                                    </div>
+
+                                    <div class="md:w-64 flex-shrink-0 p-4 md:p-6 flex flex-col justify-center space-y-3">
+                                        {% if mazo.permite_cartas_invertidas %}
+                                        <div class="flex justify-center md:justify-end">
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-500/20 text-green-300 border border-green-500/30">
+                                                <i class="fas fa-sync-alt mr-1"></i>
+                                                Incluye significado de cartas invertidas
+                                            </span>
+                                        </div>
+                                        {% endif %}
+
+                                        <div class="flex justify-center md:justify-end">
+                                            <a href="{% url 'appWeb:consulta_mazo' mazo.id %}"
+                                               class="inline-flex items-center bg-gradient-to-r from-primary-500 to-mystic-500 hover:from-primary-600 hover:to-mystic-600 text-white px-4 md:px-6 py-2 md:py-3 rounded-lg font-medium transition-all duration-300 transform hover:scale-105">
+                                                <i class="fas fa-magic mr-2"></i>
+                                                Consultar
+                                            </a>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    {% empty %}
-                    
-                    <!-- Estado Vacío -->
-                    <div class="col-span-full">
+                        {% empty %}
                         <div class="text-center py-16">
                             <div class="w-24 h-24 bg-cosmic-700/50 rounded-full flex items-center justify-center mx-auto mb-6">
                                 <i class="fas fa-search text-3xl text-cosmic-400"></i>
@@ -399,16 +413,48 @@
                                 {% endif %}
                             </p>
                             {% if selected_sets %}
-                            <button onclick="clearAllSets(); updateFilters();" 
+                            <button onclick="clearAllSets(); updateFilters();"
                                     class="bg-primary-500 hover:bg-primary-600 text-white px-6 py-3 rounded-lg font-medium transition-colors">
                                 <i class="fas fa-refresh mr-2"></i>
                                 Limpiar Filtros
                             </button>
                             {% endif %}
                         </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Descripción -->
+<div id="descripcionModal" class="modal-descripcion fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-cosmic-800 rounded-2xl border border-cosmic-600 max-w-lg w-full max-h-[85vh] overflow-y-auto">
+        <div class="p-6 border-b border-cosmic-700">
+            <div class="flex items-center justify-between">
+                <h3 class="font-mystical text-xl font-bold text-cosmic-100" id="modalMazoNombre">
+                    <i class="fas fa-scroll mr-2 text-gold-400"></i>
+                    Descripción del Mazo
+                </h3>
+                <button onclick="cerrarDescripcionModal()" class="text-cosmic-400 hover:text-cosmic-200">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="p-6">
+            <div class="bg-cosmic-700/30 rounded-lg p-4 border border-cosmic-600 mb-4">
+                <p id="modalMazoDescripcion" class="text-cosmic-200 leading-relaxed">
+                    <!-- La descripción se llena con JavaScript -->
+                </p>
+            </div>
+
+            <div class="text-center">
+                <button onclick="cerrarDescripcionModal()"
+                        class="bg-gradient-to-r from-primary-500 to-mystic-500 hover:from-primary-600 hover:to-mystic-600 text-white px-6 py-3 rounded-lg font-medium transition-all">
+                    <i class="fas fa-check mr-2"></i>Entendido
+                </button>
             </div>
         </div>
     </div>
@@ -416,16 +462,20 @@
 
 {% block extra_js %}
 <script>
-// Desactivar clic derecho en imágenes de cartas
+let mazosCarousel = null;
+let carouselDots = null;
+let currentSlide = 0;
+let totalSlides = 0;
+
 document.addEventListener('DOMContentLoaded', function() {
-    // Prevenir clic derecho en imágenes de cartas
-    document.querySelectorAll('.carta-imagen').forEach(function(img) {
+    initMazosCarousel();
+
+    // Desactivar clic derecho en imágenes
+    document.querySelectorAll('img').forEach(function(img) {
         img.addEventListener('contextmenu', function(e) {
             e.preventDefault();
             return false;
         });
-        
-        // Prevenir drag
         img.addEventListener('dragstart', function(e) {
             e.preventDefault();
             return false;
@@ -433,69 +483,102 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-let filterSidebar = null;
-let filterForm = null;
-let mobileOverlay = null;
+function initMazosCarousel() {
+    mazosCarousel = document.getElementById('mazosCarousel');
+    carouselDots = document.querySelectorAll('.carousel-dot');
 
-document.addEventListener('DOMContentLoaded', function() {
-    filterSidebar = document.getElementById('filterSidebar');
-    filterForm = document.getElementById('filterForm');
-    mobileOverlay = document.getElementById('mobileOverlay');
-    
-    // Setup mobile filter toggle
-    const toggleBtn = document.getElementById('toggleFilters');
-    if (toggleBtn) {
-        toggleBtn.addEventListener('click', toggleMobileFilters);
-    }
-    
-    // Cerrar filtros al hacer clic en overlay
-    if (mobileOverlay) {
-        mobileOverlay.addEventListener('click', toggleMobileFilters);
-    }
-});
+    if (!mazosCarousel || carouselDots.length === 0) return;
 
-// CORREGIDO: Función para manejar filtros móviles
+    totalSlides = carouselDots.length;
+
+    carouselDots.forEach((dot, index) => {
+        dot.addEventListener('click', () => {
+            goToSlide(index);
+        });
+    });
+
+    let scrollTimeout;
+    mazosCarousel.addEventListener('scroll', () => {
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => {
+            const slideWidth = mazosCarousel.scrollWidth / totalSlides;
+            const newSlide = Math.round(mazosCarousel.scrollLeft / slideWidth);
+
+            if (newSlide !== currentSlide && newSlide >= 0 && newSlide < totalSlides) {
+                currentSlide = newSlide;
+                updateDots();
+            }
+        }, 150);
+    });
+}
+
+function goToSlide(slideIndex) {
+    if (!mazosCarousel) return;
+
+    const slideWidth = mazosCarousel.scrollWidth / totalSlides;
+    mazosCarousel.scrollTo({
+        left: slideWidth * slideIndex,
+        behavior: 'smooth'
+    });
+    currentSlide = slideIndex;
+    updateDots();
+}
+
+function updateDots() {
+    carouselDots.forEach((dot, index) => {
+        dot.classList.toggle('active', index === currentSlide);
+    });
+}
+
+function abrirDescripcionModal(mazoId, mazoNombre, mazoDescripcion) {
+    document.getElementById('modalMazoNombre').innerHTML = `
+        <i class="fas fa-scroll mr-2 text-gold-400"></i>
+        ${mazoNombre}
+    `;
+    document.getElementById('modalMazoDescripcion').textContent = mazoDescripcion;
+
+    const modal = document.getElementById('descripcionModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('show');
+    document.body.classList.add('overflow-hidden');
+}
+
+function cerrarDescripcionModal() {
+    const modal = document.getElementById('descripcionModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('show');
+    document.body.classList.remove('overflow-hidden');
+}
+
+// Filtros móviles
 function toggleMobileFilters() {
-    const chevron = document.getElementById('filterChevron');
-    
-    if (filterSidebar.classList.contains('visible-mobile')) {
-        // Ocultar
-        filterSidebar.classList.remove('visible-mobile');
-        if (chevron) chevron.classList.remove('rotate-180');
-        document.body.style.overflow = ''; // Restaurar scroll
+    const sidebar = document.getElementById('filterSidebar');
+    if (sidebar.classList.contains('visible-mobile')) {
+        sidebar.classList.remove('visible-mobile');
+        document.body.style.overflow = '';
     } else {
-        // Mostrar
-        filterSidebar.classList.add('visible-mobile');
-        if (chevron) chevron.classList.add('rotate-180');
-        document.body.style.overflow = 'hidden'; // Prevenir scroll
+        sidebar.classList.add('visible-mobile');
+        document.body.style.overflow = 'hidden';
     }
 }
 
 function updateFilters() {
-    // En desktop, actualizar automáticamente
     if (window.innerWidth >= 768) {
-        filterForm.submit();
+        document.getElementById('filterForm').submit();
     }
-    // En mobile, esperar a que presione "Aplicar"
 }
 
 function applyFiltersAndClose() {
-    filterForm.submit();
+    document.getElementById('filterForm').submit();
 }
 
 function selectAllSets() {
-    const checkboxes = document.querySelectorAll('input[name="sets"]');
-    checkboxes.forEach(checkbox => {
-        checkbox.checked = true;
-    });
+    document.querySelectorAll('input[name="sets"]').forEach(cb => cb.checked = true);
     updateFilters();
 }
 
 function clearAllSets() {
-    const checkboxes = document.querySelectorAll('input[name="sets"]');
-    checkboxes.forEach(checkbox => {
-        checkbox.checked = false;
-    });
+    document.querySelectorAll('input[name="sets"]').forEach(cb => cb.checked = false);
     updateFilters();
 }
 
@@ -507,32 +590,26 @@ function removeSetFilter(setId) {
     }
 }
 
-// Responsive behavior corregido
-window.addEventListener('resize', function() {
-    if (window.innerWidth >= 768) {
-        // En desktop, resetear estilos móviles
-        filterSidebar.classList.remove('visible-mobile');
-        const chevron = document.getElementById('filterChevron');
-        if (chevron) chevron.classList.remove('rotate-180');
-        document.body.style.overflow = '';
-    }
-});
-
-// Cerrar filtros con tecla ESC en móvil
+// Event listeners para cerrar modales
 document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' && window.innerWidth < 768) {
-        if (filterSidebar.classList.contains('visible-mobile')) {
-            toggleMobileFilters();
+    if (e.key === 'Escape') {
+        cerrarDescripcionModal();
+        if (window.innerWidth < 768) {
+            const sidebar = document.getElementById('filterSidebar');
+            if (sidebar.classList.contains('visible-mobile')) {
+                toggleMobileFilters();
+            }
         }
     }
 });
 
-// Cerrar filtros al hacer clic en el fondo (móvil)
-filterSidebar.addEventListener('click', function(e) {
-    if (e.target === filterSidebar && window.innerWidth < 768) {
-        toggleMobileFilters();
+document.getElementById('descripcionModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        cerrarDescripcionModal();
     }
 });
+
+document.getElementById('toggleFilters').addEventListener('click', toggleMobileFilters);
 </script>
 {% endblock %}
 {% endblock %}
