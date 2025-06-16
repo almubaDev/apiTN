@@ -17,6 +17,7 @@
 
     .modal {
         transition: all 0.3s ease;
+        backdrop-filter: blur(8px);
     }
 
     .modal.show {
@@ -220,6 +221,47 @@
     .modal-carta {
         backdrop-filter: blur(8px);
     }
+
+    /* NUEVOS: Estilos para altura adaptativa del modal principal */
+    /* Para mobile: limitar altura máxima pero permitir adaptación */
+    @media (max-width: 767px) {
+        #modalResultado .bg-cosmic-800 {
+            max-height: 90vh;
+            min-height: auto; /* Remover altura mínima fija */
+        }
+
+        /* Hacer cartas más pequeñas en móvil */
+        .carta-resultado .carta-imagen-container {
+            height: 120px;
+        }
+    }
+
+    /* Para desktop: altura más flexible */
+    @media (min-width: 768px) {
+        #modalResultado .bg-cosmic-800 {
+            min-height: 300px; /* Altura mínima reducida */
+            max-height: 95vh;
+        }
+    }
+
+    /* Indicador visual cuando hay scroll disponible */
+    .has-scroll {
+        position: relative;
+    }
+
+    .has-scroll::after {
+        content: '↕';
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: rgba(139, 92, 246, 0.8);
+        color: white;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 12px;
+        z-index: 10;
+        opacity: 0.7;
+    }
 </style>
 {% endblock %}
 
@@ -395,95 +437,185 @@
     </div>
 </div>
 
-<!-- Modal: Loading y Resultado - CORREGIDO: Altura adaptativa -->
+<!-- Modal: Loading y Resultado - NUEVO: ALTURA ADAPTATIVA -->
 <div id="modalResultado" class="modal hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div class="bg-cosmic-800 rounded-2xl border border-cosmic-600 w-full max-w-6xl max-h-[95vh] min-h-[400px] flex flex-col overflow-hidden">
+    <!-- MOBILE VERSION -->
+    <div class="md:hidden w-full max-w-sm mx-auto">
+        <div class="bg-cosmic-800 rounded-2xl border border-cosmic-600 w-full flex flex-col" style="max-height: 90vh;">
 
-        <!-- Loading State -->
-        <div id="loadingState" class="p-8 text-center">
-            <div class="mb-6">
-                <img id="tiradaImagen" src="" alt="" class="w-32 h-32 object-cover rounded-lg mx-auto mb-4" style="display: none;">
-                <div class="loading-spinner w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+            <!-- Loading State Mobile -->
+            <div id="loadingState" class="p-6 text-center flex-shrink-0">
+                <div class="mb-6">
+                    <img id="tiradaImagen" src="" alt="" class="w-24 h-24 object-cover rounded-lg mx-auto mb-4" style="display: none;">
+                    <div class="loading-spinner w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+                </div>
+                <h3 class="font-mystical text-lg font-bold text-cosmic-100 mb-2">
+                    Consultando al Oráculo...
+                </h3>
+                <p class="text-cosmic-300 text-sm">
+                    Las energías cósmicas están alineándose para revelarte tu destino
+                </p>
             </div>
-            <h3 class="font-mystical text-xl font-bold text-cosmic-100 mb-2">
-                Consultando al Oráculo...
-            </h3>
-            <p class="text-cosmic-300">
-                Las energías cósmicas están alineándose para revelarte tu destino
-            </p>
+
+            <!-- Resultado State Mobile -->
+            <div id="resultadoState" class="hidden flex flex-col min-h-0">
+                <!-- Header - FIJO -->
+                <div class="flex-shrink-0 p-4 border-b border-cosmic-700">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-mystical text-lg font-bold text-cosmic-100">
+                            <i class="fas fa-eye mr-2 text-gold-400"></i>
+                            Tu Destino Revelado
+                        </h3>
+                        <button onclick="cerrarModal('modalResultado')" class="text-cosmic-400 hover:text-cosmic-200">
+                            <i class="fas fa-times text-lg"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Contenido - SCROLLEABLE -->
+                <div class="flex-1 overflow-y-auto p-4 space-y-4" style="max-height: calc(90vh - 120px);">
+
+                    <!-- Pregunta del Consultante -->
+                    <div class="bg-primary-900/20 border border-primary-500/30 rounded-lg p-3">
+                        <h4 class="font-mystical text-sm font-semibold text-primary-300 mb-2">
+                            <i class="fas fa-question-circle mr-1"></i>
+                            Tu Pregunta
+                        </h4>
+                        <p id="preguntaResultado" class="text-cosmic-200 italic text-sm"></p>
+                    </div>
+
+                    <!-- Cartas Reveladas -->
+                    <div>
+                        <h4 class="font-mystical text-sm font-semibold text-cosmic-100 mb-3">
+                            <i class="fas fa-cards mr-1 text-gold-400"></i>
+                            Cartas Reveladas
+                        </h4>
+                        <div id="cartasGrid" class="grid grid-cols-2 gap-3">
+                            <!-- Las cartas se llenarán dinámicamente -->
+                        </div>
+                    </div>
+
+                    <!-- Interpretación de la IA -->
+                    <div class="bg-cosmic-700/30 rounded-lg p-4 border border-cosmic-600">
+                        <h4 class="font-mystical text-sm font-semibold text-cosmic-100 mb-3">
+                            <i class="fas fa-crystal-ball mr-1 text-mystic-400"></i>
+                            Interpretación Mística
+                        </h4>
+                        <div id="interpretacionIA" class="interpretacion-content text-cosmic-200 leading-relaxed text-sm">
+                            <!-- El contenido se llenará con JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer - FIJO -->
+                <div class="flex-shrink-0 p-4 border-t border-cosmic-700">
+                    <div class="flex gap-2">
+                        <button onclick="cerrarModal('modalResultado')"
+                                class="flex-1 bg-gradient-to-r from-primary-500 to-mystic-500 hover:from-primary-600 hover:to-mystic-600 text-white py-2 rounded-lg font-medium transition-all text-sm">
+                            <i class="fas fa-check mr-1"></i>
+                            Entendido
+                        </button>
+                        <a href="{% url 'appWeb:historial_consultas' %}"
+                           class="flex-1 border border-cosmic-500 text-cosmic-300 hover:text-cosmic-100 py-2 rounded-lg font-medium text-center transition-colors text-sm">
+                            <i class="fas fa-history mr-1"></i>
+                            Historial
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
+    </div>
 
-        <!-- Resultado State -->
-        <div id="resultadoState" class="hidden flex flex-col min-h-0">
-            <!-- Header - FIJO -->
-            <div class="flex-shrink-0 p-6 border-b border-cosmic-700">
-                <div class="flex items-center justify-between">
-                    <h3 class="font-mystical text-2xl font-bold text-cosmic-100">
-                        <i class="fas fa-eye mr-3 text-gold-400"></i>
-                        Tu Destino Revelado
-                    </h3>
-                    <button onclick="cerrarModal('modalResultado')" class="text-cosmic-400 hover:text-cosmic-200">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
+    <!-- DESKTOP VERSION -->
+    <div class="hidden md:block w-full max-w-6xl mx-auto">
+        <div class="bg-cosmic-800 rounded-2xl border border-cosmic-600 w-full flex flex-col" style="min-height: 300px; max-height: 95vh;">
+
+            <!-- Loading State Desktop -->
+            <div id="loadingStateDesktop" class="p-8 text-center flex-shrink-0">
+                <div class="mb-6">
+                    <img id="tiradaImagenDesktop" src="" alt="" class="w-32 h-32 object-cover rounded-lg mx-auto mb-4" style="display: none;">
+                    <div class="loading-spinner w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full mx-auto mb-4"></div>
                 </div>
+                <h3 class="font-mystical text-xl font-bold text-cosmic-100 mb-2">
+                    Consultando al Oráculo...
+                </h3>
+                <p class="text-cosmic-300">
+                    Las energías cósmicas están alineándose para revelarte tu destino
+                </p>
             </div>
 
-            <!-- Contenido del Resultado - SCROLLEABLE ADAPTATIVO -->
-            <div class="flex-1 overflow-y-auto p-6 space-y-6">
-
-                <!-- Pregunta del Consultante -->
-                <div class="bg-primary-900/20 border border-primary-500/30 rounded-lg p-4">
-                    <h4 class="font-mystical text-lg font-semibold text-primary-300 mb-2">
-                        <i class="fas fa-question-circle mr-2"></i>
-                        Tu Pregunta
-                    </h4>
-                    <p id="preguntaResultado" class="text-cosmic-200 italic"></p>
-                </div>
-
-                <!-- Cartas Reveladas - NUEVO: Con funcionalidad de volteo -->
-                <div>
-                    <h4 class="font-mystical text-lg font-semibold text-cosmic-100 mb-4">
-                        <i class="fas fa-cards mr-2 text-gold-400"></i>
-                        Cartas Reveladas
-                        <span class="text-sm text-cosmic-400 font-normal ml-2">(Toca una carta para ver su significado)</span>
-                    </h4>
-                    <div id="cartasGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <!-- Las cartas se llenarán dinámicamente -->
+            <!-- Resultado State Desktop -->
+            <div id="resultadoStateDesktop" class="hidden flex flex-col min-h-0">
+                <!-- Header - FIJO -->
+                <div class="flex-shrink-0 p-6 border-b border-cosmic-700">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-mystical text-2xl font-bold text-cosmic-100">
+                            <i class="fas fa-eye mr-3 text-gold-400"></i>
+                            Tu Destino Revelado
+                        </h3>
+                        <button onclick="cerrarModal('modalResultado')" class="text-cosmic-400 hover:text-cosmic-200">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
                     </div>
                 </div>
 
-                <!-- Interpretación de la IA -->
-                <div class="bg-cosmic-700/30 rounded-lg p-6 border border-cosmic-600">
-                    <h4 class="font-mystical text-lg font-semibold text-cosmic-100 mb-4">
-                        <i class="fas fa-crystal-ball mr-2 text-mystic-400"></i>
-                        Interpretación Mística
-                    </h4>
-                    <div id="interpretacionIA" class="interpretacion-content text-cosmic-200 leading-relaxed">
-                        <!-- El contenido se llenará con JavaScript -->
+                <!-- Contenido del Resultado - SCROLLEABLE ADAPTATIVO -->
+                <div class="flex-1 overflow-y-auto p-6 space-y-6" style="max-height: calc(95vh - 180px);">
+
+                    <!-- Pregunta del Consultante -->
+                    <div class="bg-primary-900/20 border border-primary-500/30 rounded-lg p-4">
+                        <h4 class="font-mystical text-lg font-semibold text-primary-300 mb-2">
+                            <i class="fas fa-question-circle mr-2"></i>
+                            Tu Pregunta
+                        </h4>
+                        <p id="preguntaResultadoDesktop" class="text-cosmic-200 italic"></p>
+                    </div>
+
+                    <!-- Cartas Reveladas -->
+                    <div>
+                        <h4 class="font-mystical text-lg font-semibold text-cosmic-100 mb-4">
+                            <i class="fas fa-cards mr-2 text-gold-400"></i>
+                            Cartas Reveladas
+                            <span class="text-sm text-cosmic-400 font-normal ml-2">(Toca una carta para ver su significado)</span>
+                        </h4>
+                        <div id="cartasGridDesktop" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <!-- Las cartas se llenarán dinámicamente -->
+                        </div>
+                    </div>
+
+                    <!-- Interpretación de la IA -->
+                    <div class="bg-cosmic-700/30 rounded-lg p-6 border border-cosmic-600">
+                        <h4 class="font-mystical text-lg font-semibold text-cosmic-100 mb-4">
+                            <i class="fas fa-crystal-ball mr-2 text-mystic-400"></i>
+                            Interpretación Mística
+                        </h4>
+                        <div id="interpretacionIADesktop" class="interpretacion-content text-cosmic-200 leading-relaxed">
+                            <!-- El contenido se llenará con JavaScript -->
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Footer - FIJO -->
-            <div class="flex-shrink-0 p-6 border-t border-cosmic-700">
-                <div class="flex gap-3">
-                    <button onclick="cerrarModal('modalResultado')"
-                            class="flex-1 bg-gradient-to-r from-primary-500 to-mystic-500 hover:from-primary-600 hover:to-mystic-600 text-white py-3 rounded-lg font-medium transition-all">
-                        <i class="fas fa-check mr-2"></i>
-                        Entendido
-                    </button>
-                    <a href="{% url 'appWeb:historial_consultas' %}"
-                       class="flex-1 border border-cosmic-500 text-cosmic-300 hover:text-cosmic-100 py-3 rounded-lg font-medium text-center transition-colors">
-                        <i class="fas fa-history mr-2"></i>
-                        Ver Historial
-                    </a>
+                <!-- Footer - FIJO -->
+                <div class="flex-shrink-0 p-6 border-t border-cosmic-700">
+                    <div class="flex gap-3">
+                        <button onclick="cerrarModal('modalResultado')"
+                                class="flex-1 bg-gradient-to-r from-primary-500 to-mystic-500 hover:from-primary-600 hover:to-mystic-600 text-white py-3 rounded-lg font-medium transition-all">
+                            <i class="fas fa-check mr-2"></i>
+                            Entendido
+                        </button>
+                        <a href="{% url 'appWeb:historial_consultas' %}"
+                           class="flex-1 border border-cosmic-500 text-cosmic-300 hover:text-cosmic-100 py-3 rounded-lg font-medium text-center transition-colors">
+                            <i class="fas fa-history mr-2"></i>
+                            Ver Historial
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- NUEVO: Modal para significado individual de carta - CORREGIDO -->
+<!-- NUEVO: Modal para significado individual de carta -->
 <div id="modalCarta" class="modal hidden fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4 modal-carta">
     <div class="bg-cosmic-800 rounded-2xl border border-cosmic-600 max-w-lg w-full max-h-[85vh] overflow-y-auto">
         <div class="p-6 border-b border-cosmic-700">
@@ -506,7 +638,7 @@
                 </div>
                 <h4 id="cartaModalNombre" class="font-mystical text-lg font-semibold text-cosmic-100 mb-1"></h4>
                 <p id="cartaModalPosicion" class="text-cosmic-400 text-sm mb-3"></p>
-                
+
                 <!-- Orientación en la tirada -->
                 <div id="cartaModalOrientacion" class="inline-flex items-center px-3 py-1 rounded-full text-sm mb-4">
                     <i class="fas fa-arrow-up mr-2"></i>
@@ -514,7 +646,7 @@
                 </div>
             </div>
 
-            <!-- CORREGIDO: Área para mostrar ambos significados -->
+            <!-- Área para mostrar ambos significados -->
             <div class="space-y-4">
                 <h5 class="font-semibold text-cosmic-200 text-center">
                     <i class="fas fa-book-open mr-2 text-mystic-400"></i>
@@ -526,7 +658,7 @@
             </div>
 
             <div class="mt-6 text-center">
-                <button onclick="cerrarModal('modalCarta')" 
+                <button onclick="cerrarModal('modalCarta')"
                         class="bg-gradient-to-r from-primary-500 to-mystic-500 hover:from-primary-600 hover:to-mystic-600 text-white px-6 py-3 rounded-lg font-medium transition-all">
                     <i class="fas fa-check mr-2"></i>Entendido
                 </button>
@@ -547,7 +679,7 @@ var tiradaSeleccionada = {
     imagen: ''
 };
 
-var cartasResultadoGlobal = []; // NUEVO: Para almacenar datos completos de las cartas
+var cartasResultadoGlobal = []; // Para almacenar datos completos de las cartas
 
 // Función para procesar markdown
 function parseMarkdown(text) {
@@ -604,7 +736,7 @@ function getCSRFToken() {
     return null;
 }
 
-// CORREGIDO: Función para mostrar modal de carta individual con significados reales
+// ACTUALIZADO: Función para mostrar modal de carta individual con significados reales
 function mostrarModalCarta(cartaIndex) {
     if (!cartasResultadoGlobal[cartaIndex]) {
         console.error('Carta no encontrada:', cartaIndex);
@@ -620,9 +752,9 @@ function mostrarModalCarta(cartaIndex) {
     document.getElementById('cartaModalImagen').src = carta.imagen || '';
     document.getElementById('cartaModalImagen').alt = carta.nombre || '';
 
-    // CORREGIDO: Mostrar ambos significados (normal e invertida) de la carta
+    // Mostrar ambos significados (normal e invertida) de la carta
     var significadoHTML = '';
-    
+
     // Significado normal (siempre se muestra)
     if (carta.significado_normal) {
         significadoHTML += '<div class="mb-4">';
@@ -632,7 +764,7 @@ function mostrarModalCarta(cartaIndex) {
         significadoHTML += '<p class="text-cosmic-300 text-sm leading-relaxed">' + carta.significado_normal + '</p>';
         significadoHTML += '</div>';
     }
-    
+
     // Significado invertido (solo si existe)
     if (carta.significado_invertida && carta.significado_invertida.trim() !== '') {
         significadoHTML += '<div class="mb-4">';
@@ -642,12 +774,12 @@ function mostrarModalCarta(cartaIndex) {
         significadoHTML += '<p class="text-cosmic-300 text-sm leading-relaxed">' + carta.significado_invertida + '</p>';
         significadoHTML += '</div>';
     }
-    
+
     // Si no hay significados, mostrar mensaje
     if (!significadoHTML) {
         significadoHTML = '<p class="text-cosmic-400 text-sm">No hay significados disponibles para esta carta.</p>';
     }
-    
+
     document.getElementById('cartaModalSignificado').innerHTML = significadoHTML;
 
     // Configurar orientación actual de la carta en la tirada
@@ -739,17 +871,6 @@ function realizarConsulta(e) {
     cerrarModal('modalConsulta');
     mostrarModalResultado();
 
-    // Configurar imagen de tirada en loading
-    var tiradaImg = document.getElementById('tiradaImagen');
-    if (tiradaImg) {
-        if (tiradaSeleccionada.imagen) {
-            tiradaImg.src = tiradaSeleccionada.imagen;
-            tiradaImg.style.display = 'block';
-        } else {
-            tiradaImg.style.display = 'none';
-        }
-    }
-
     // Obtener CSRF token
     var csrfToken = getCSRFToken();
     if (!csrfToken) {
@@ -812,72 +933,132 @@ function realizarConsulta(e) {
     });
 }
 
-// ACTUALIZADO: Mostrar resultado con cartas interactivas
+// NUEVO: Función para mostrar resultado con cartas interactivas - RESPONSIVE
 function mostrarResultado(resultado, pregunta) {
     console.log('Mostrando resultado:', resultado);
 
-    // Ocultar loading y mostrar resultado
-    var loadingState = document.getElementById('loadingState');
-    var resultadoState = document.getElementById('resultadoState');
+    // Detectar si es mobile o desktop
+    const isMobile = window.innerWidth < 768;
 
-    if (loadingState) loadingState.style.display = 'none';
-    if (resultadoState) resultadoState.classList.remove('hidden');
+    // Referencias para mobile y desktop
+    const loadingState = document.getElementById('loadingState');
+    const loadingStateDesktop = document.getElementById('loadingStateDesktop');
+    const resultadoState = document.getElementById('resultadoState');
+    const resultadoStateDesktop = document.getElementById('resultadoStateDesktop');
 
-    // Llenar pregunta
-    var preguntaElement = document.getElementById('preguntaResultado');
-    if (preguntaElement) preguntaElement.textContent = pregunta;
-
-    // Llenar interpretación con procesamiento de markdown
-    var interpretacionElement = document.getElementById('interpretacionIA');
-    if (interpretacionElement) {
-        var interpretacionTexto = resultado.interpretacion_ia || 'Sin interpretación disponible';
-        interpretacionElement.innerHTML = parseMarkdown(interpretacionTexto);
+    // Ocultar loading y mostrar resultado según dispositivo
+    if (isMobile) {
+        if (loadingState) loadingState.style.display = 'none';
+        if (resultadoState) resultadoState.classList.remove('hidden');
+    } else {
+        if (loadingStateDesktop) loadingStateDesktop.style.display = 'none';
+        if (resultadoStateDesktop) resultadoStateDesktop.classList.remove('hidden');
     }
 
-    // NUEVO: Almacenar cartas globalmente para modal individual
+    // Llenar pregunta (ambas versiones)
+    const preguntaElementMobile = document.getElementById('preguntaResultado');
+    const preguntaElementDesktop = document.getElementById('preguntaResultadoDesktop');
+
+    if (preguntaElementMobile) preguntaElementMobile.textContent = pregunta;
+    if (preguntaElementDesktop) preguntaElementDesktop.textContent = pregunta;
+
+    // Llenar interpretación con procesamiento de markdown (ambas versiones)
+    const interpretacionElementMobile = document.getElementById('interpretacionIA');
+    const interpretacionElementDesktop = document.getElementById('interpretacionIADesktop');
+
+    if (interpretacionElementMobile) {
+        var interpretacionTexto = resultado.interpretacion_ia || 'Sin interpretación disponible';
+        interpretacionElementMobile.innerHTML = parseMarkdown(interpretacionTexto);
+    }
+
+    if (interpretacionElementDesktop) {
+        var interpretacionTexto = resultado.interpretacion_ia || 'Sin interpretación disponible';
+        interpretacionElementDesktop.innerHTML = parseMarkdown(interpretacionTexto);
+    }
+
+    // Almacenar cartas globalmente para modal individual
     cartasResultadoGlobal = resultado.cartas || [];
 
-    // ACTUALIZADO: Llenar cartas con funcionalidad interactiva
-    var cartasGrid = document.getElementById('cartasGrid');
-    if (cartasGrid) {
-        cartasGrid.innerHTML = '';
+    // Llenar cartas con funcionalidad interactiva (ambas versiones)
+    const cartasGridMobile = document.getElementById('cartasGrid');
+    const cartasGridDesktop = document.getElementById('cartasGridDesktop');
 
-        var cartas = resultado.cartas || [];
-        for (var i = 0; i < cartas.length; i++) {
-            var cartaInfo = cartas[i];
-            var cartaDiv = document.createElement('div');
-            cartaDiv.className = 'carta-resultado bg-cosmic-700/50 rounded-lg border border-cosmic-600 overflow-hidden relative';
-            
-            // NUEVO: Agregar atributo onclick para mostrar modal
-            cartaDiv.setAttribute('onclick', 'mostrarModalCarta(' + i + ')');
+    // Función para crear HTML de carta
+    function crearCartaHTML(cartaInfo, index, isMobileVersion) {
+        const rotacionClass = cartaInfo.es_invertida ? 'transform rotate-180' : '';
+        const badgeClass = cartaInfo.es_invertida ? 'bg-orange-500/20 text-orange-300' : 'bg-green-500/20 text-green-300';
+        const iconClass = cartaInfo.es_invertida ? 'undo' : 'arrow-up';
+        const orientacionTexto = cartaInfo.es_invertida ? 'Invertida' : 'Derecha';
 
-            var rotacionClass = cartaInfo.es_invertida ? 'transform rotate-180' : '';
-            var badgeClass = cartaInfo.es_invertida ? 'bg-orange-500/20 text-orange-300' : 'bg-green-500/20 text-green-300';
-            var iconClass = cartaInfo.es_invertida ? 'undo' : 'arrow-up';
-            var orientacionTexto = cartaInfo.es_invertida ? 'Invertida' : 'Derecha';
-
-            cartaDiv.innerHTML =
-                '<div class="carta-tooltip">Toca para ver significado</div>' +
-                '<div class="carta-imagen-container">' +
-                    '<img src="' + (cartaInfo.carta.imagen || '') + '" ' +
-                         'alt="' + (cartaInfo.carta.nombre || '') + '" ' +
-                         'class="' + rotacionClass + '">' +
-                '</div>' +
-                '<div class="p-4">' +
-                    '<h5 class="font-mystical font-semibold text-cosmic-100 mb-1">' + (cartaInfo.posicion || '') + '</h5>' +
-                    '<p class="text-cosmic-300 text-sm mb-2">' + (cartaInfo.carta.nombre || '') + '</p>' +
-                    '<div class="flex items-center mb-2">' +
-                        '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs ' + badgeClass + '">' +
-                            '<i class="fas fa-' + iconClass + ' mr-1"></i>' +
-                            orientacionTexto +
-                        '</span>' +
-                    '</div>' +
-                    '<p class="text-cosmic-400 text-xs leading-relaxed">' + (cartaInfo.descripcion_posicion || '') + '</p>' +
-                '</div>';
-
-            cartasGrid.appendChild(cartaDiv);
+        if (isMobileVersion) {
+            // Versión móvil más compacta
+            return `
+                <div class="carta-resultado bg-cosmic-700/50 rounded-lg border border-cosmic-600 overflow-hidden relative p-2"
+                     onclick="mostrarModalCarta(${index})">
+                    <div class="carta-tooltip">Toca para ver</div>
+                    <div class="aspect-[2/3] mb-2">
+                        <img src="${cartaInfo.carta.imagen || ''}"
+                             alt="${cartaInfo.carta.nombre || ''}"
+                             class="w-full h-full object-contain rounded ${rotacionClass}">
+                    </div>
+                    <div>
+                        <h5 class="font-mystical font-semibold text-cosmic-100 text-xs mb-1">${cartaInfo.posicion || ''}</h5>
+                        <p class="text-cosmic-300 text-xs mb-1">${cartaInfo.carta.nombre || ''}</p>
+                        <span class="inline-flex items-center px-1 py-0.5 rounded-full text-xs ${badgeClass}">
+                            <i class="fas fa-${iconClass} mr-1"></i>
+                            ${orientacionTexto}
+                        </span>
+                    </div>
+                </div>
+            `;
+        } else {
+            // Versión desktop completa
+            return `
+                <div class="carta-resultado bg-cosmic-700/50 rounded-lg border border-cosmic-600 overflow-hidden relative"
+                     onclick="mostrarModalCarta(${index})">
+                    <div class="carta-tooltip">Toca para ver significado</div>
+                    <div class="carta-imagen-container">
+                        <img src="${cartaInfo.carta.imagen || ''}"
+                             alt="${cartaInfo.carta.nombre || ''}"
+                             class="${rotacionClass}">
+                    </div>
+                    <div class="p-4">
+                        <h5 class="font-mystical font-semibold text-cosmic-100 mb-1">${cartaInfo.posicion || ''}</h5>
+                        <p class="text-cosmic-300 text-sm mb-2">${cartaInfo.carta.nombre || ''}</p>
+                        <div class="flex items-center mb-2">
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs ${badgeClass}">
+                                <i class="fas fa-${iconClass} mr-1"></i>
+                                ${orientacionTexto}
+                            </span>
+                        </div>
+                        <p class="text-cosmic-400 text-xs leading-relaxed">${cartaInfo.descripcion_posicion || ''}</p>
+                    </div>
+                </div>
+            `;
         }
     }
+
+    // Llenar grids de cartas
+    if (cartasGridMobile) {
+        cartasGridMobile.innerHTML = '';
+        var cartas = resultado.cartas || [];
+        for (var i = 0; i < cartas.length; i++) {
+            cartasGridMobile.innerHTML += crearCartaHTML(cartas[i], i, true);
+        }
+    }
+
+    if (cartasGridDesktop) {
+        cartasGridDesktop.innerHTML = '';
+        var cartas = resultado.cartas || [];
+        for (var i = 0; i < cartas.length; i++) {
+            cartasGridDesktop.innerHTML += crearCartaHTML(cartas[i], i, false);
+        }
+    }
+
+    // Verificar si hay scroll después de renderizar
+    setTimeout(function() {
+        verificarAlturaContenido();
+    }, 100);
 }
 
 // Funciones de modal
@@ -901,16 +1082,98 @@ function cerrarModal(modalId) {
     }
 }
 
+// ACTUALIZADO: mostrarModalResultado para manejar responsive
 function mostrarModalResultado() {
-    // Reset states
-    var loadingState = document.getElementById('loadingState');
-    var resultadoState = document.getElementById('resultadoState');
+    // Detectar dispositivo
+    const isMobile = window.innerWidth < 768;
 
-    if (loadingState) loadingState.style.display = 'block';
-    if (resultadoState) resultadoState.classList.add('hidden');
+    // Reset states para ambas versiones
+    const loadingState = document.getElementById('loadingState');
+    const loadingStateDesktop = document.getElementById('loadingStateDesktop');
+    const resultadoState = document.getElementById('resultadoState');
+    const resultadoStateDesktop = document.getElementById('resultadoStateDesktop');
+
+    // Mostrar loading según dispositivo
+    if (isMobile) {
+        if (loadingState) loadingState.style.display = 'block';
+        if (resultadoState) resultadoState.classList.add('hidden');
+    } else {
+        if (loadingStateDesktop) loadingStateDesktop.style.display = 'block';
+        if (resultadoStateDesktop) resultadoStateDesktop.classList.add('hidden');
+    }
+
+    // Configurar imagen de tirada en loading (ambas versiones)
+    const tiradaImgMobile = document.getElementById('tiradaImagen');
+    const tiradaImgDesktop = document.getElementById('tiradaImagenDesktop');
+
+    if (tiradaSeleccionada.imagen) {
+        if (tiradaImgMobile) {
+            tiradaImgMobile.src = tiradaSeleccionada.imagen;
+            tiradaImgMobile.style.display = 'block';
+        }
+        if (tiradaImgDesktop) {
+            tiradaImgDesktop.src = tiradaSeleccionada.imagen;
+            tiradaImgDesktop.style.display = 'block';
+        }
+    } else {
+        if (tiradaImgMobile) tiradaImgMobile.style.display = 'none';
+        if (tiradaImgDesktop) tiradaImgDesktop.style.display = 'none';
+    }
 
     mostrarModal('modalResultado');
 }
+
+// Nueva función para verificar altura del contenido
+function verificarAlturaContenido() {
+    const modal = document.getElementById('modalResultado');
+    const isMobile = window.innerWidth < 768;
+
+    if (modal && !modal.classList.contains('hidden')) {
+        const contenedorContenido = isMobile ?
+            modal.querySelector('.md\\:hidden .overflow-y-auto') :
+            modal.querySelector('.hidden.md\\:block .overflow-y-auto');
+
+        if (contenedorContenido) {
+            const alturaReal = contenedorContenido.scrollHeight;
+            const alturaVisible = contenedorContenido.clientHeight;
+
+            // Si hay scroll, agregar una clase para indicarlo
+            if (alturaReal > alturaVisible) {
+                contenedorContenido.classList.add('has-scroll');
+                console.log('Modal tiene scroll:', alturaReal, 'vs', alturaVisible);
+            } else {
+                contenedorContenido.classList.remove('has-scroll');
+                console.log('Modal NO tiene scroll:', alturaReal, 'vs', alturaVisible);
+            }
+        }
+    }
+}
+
+// Event listener para redimensionamiento de ventana
+window.addEventListener('resize', function() {
+    // Si el modal está abierto, ajustar la vista según el nuevo tamaño
+    const modal = document.getElementById('modalResultado');
+    if (modal && !modal.classList.contains('hidden')) {
+        // Pequeño delay para evitar múltiples llamadas
+        setTimeout(() => {
+            const isMobile = window.innerWidth < 768;
+
+            // Ocultar/mostrar versiones según dispositivo
+            const mobileElements = modal.querySelectorAll('.md\\:hidden');
+            const desktopElements = modal.querySelectorAll('.hidden.md\\:block');
+
+            mobileElements.forEach(el => {
+                el.style.display = isMobile ? 'block' : 'none';
+            });
+
+            desktopElements.forEach(el => {
+                el.style.display = isMobile ? 'none' : 'block';
+            });
+
+            verificarAlturaContenido();
+        }, 100);
+    }
+});
 
 // Cerrar modal al hacer clic fuera
 document.addEventListener('click', function(e) {
