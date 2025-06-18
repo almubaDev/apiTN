@@ -18,20 +18,20 @@ class GeminiService:
         except Exception as e:
             logger.error(f"Error initializing Gemini service: {str(e)}")
             raise
-    
+
     def generar_interpretacion_tarot(self, prompt_completo):
         """
         Generar interpretación de tarot usando Gemini 2.0 Flash-Lite
-        
+
         Args:
             prompt_completo (str): El prompt completo para la IA
-            
+
         Returns:
             str: La interpretación generada por la IA
         """
         try:
             logger.info("🔮 Iniciando generación de interpretación con Gemini 2.0 Flash-Lite")
-            
+
             # Configuración optimizada para 2.0 Flash-Lite
             generation_config = genai.types.GenerationConfig(
                 temperature=0.85,  # Ligeramente más creativo para interpretaciones místicas
@@ -40,7 +40,7 @@ class GeminiService:
                 max_output_tokens=1200,  # Aumentado para interpretaciones más completas
                 response_mime_type="text/plain",
             )
-            
+
             # Configuración de seguridad (permitir contenido místico/esotérico)
             safety_settings = [
                 {
@@ -48,7 +48,7 @@ class GeminiService:
                     "threshold": "BLOCK_MEDIUM_AND_ABOVE"
                 },
                 {
-                    "category": "HARM_CATEGORY_HATE_SPEECH", 
+                    "category": "HARM_CATEGORY_HATE_SPEECH",
                     "threshold": "BLOCK_MEDIUM_AND_ABOVE"
                 },
                 {
@@ -60,30 +60,30 @@ class GeminiService:
                     "threshold": "BLOCK_MEDIUM_AND_ABOVE"
                 }
             ]
-            
+
             logger.info("📡 Enviando prompt a Gemini 2.0 Flash-Lite...")
-            
+
             # Generar respuesta
             response = self.model.generate_content(
                 prompt_completo,
                 generation_config=generation_config,
                 safety_settings=safety_settings
             )
-            
+
             logger.info("✅ Respuesta recibida de Gemini 2.0 Flash-Lite")
-            
+
             if response.candidates and len(response.candidates) > 0:
                 candidate = response.candidates[0]
-                
+
                 # Verificar si la respuesta fue bloqueada por seguridad
                 if hasattr(candidate, 'finish_reason'):
                     logger.info(f"🔍 Finish reason: {candidate.finish_reason}")
-                    
+
                     # Si fue bloqueado por seguridad, usar interpretación alternativa
                     if hasattr(candidate.finish_reason, 'name') and candidate.finish_reason.name in ['SAFETY', 'RECITATION']:
                         logger.warning("⚠️ Respuesta bloqueada por filtros de seguridad")
                         return self._get_mystical_fallback_interpretation()
-                
+
                 if hasattr(candidate, 'content') and candidate.content and candidate.content.parts:
                     interpretacion = candidate.content.parts[0].text
                     logger.info("🎭 Interpretación mística generada exitosamente")
@@ -95,17 +95,17 @@ class GeminiService:
             else:
                 logger.warning("⚠️ No hay candidatos en la respuesta de Gemini")
                 return self._get_mystical_fallback_interpretation()
-                
+
         except Exception as e:
             logger.error(f"❌ Error generating tarot interpretation: {str(e)}")
             logger.error(f"🔧 Tipo de error: {type(e).__name__}")
-            
+
             # Si es un error 404, sugerir modelo alternativo
             if "404" in str(e) or "not found" in str(e).lower():
                 logger.error("💡 Modelo gemini-2.0-flash-lite no disponible, considera usar gemini-1.5-flash")
-            
+
             return self._get_mystical_fallback_interpretation()
-    
+
     def _get_mystical_fallback_interpretation(self):
         """
         Interpretación mística alternativa cuando el servicio no está disponible
@@ -113,55 +113,55 @@ class GeminiService:
         return """
 🔮 **Revelación de las Cartas Sagradas** 🔮
 
-Las energías del universo han conspirado para traerte estas cartas en este momento preciso. 
-Aunque las conexiones digitales fluctúan, puedo percibir las vibraciones profundas 
+Las energías del universo han conspirado para traerte estas cartas en este momento preciso.
+Aunque las conexiones digitales fluctúan, puedo percibir las vibraciones profundas
 que emanan de tu tirada sagrada.
 
 **💫 Mensaje Central de las Cartas:**
-El cosmos te susurra que estás en un momento de transformación profunda. Las cartas 
-que han aparecido no son casualidad: son un reflejo de las energías que ya danzan 
+El cosmos te susurra que estás en un momento de transformación profunda. Las cartas
+que han aparecido no son casualidad: son un reflejo de las energías que ya danzan
 en tu vida, esperando ser reconocidas y canalizadas.
 
 **🌟 Energía Dominante:**
-Siento una fuerte corriente de cambio fluyendo a través de tu consulta. El universo 
-te está preparando para una nueva fase de tu existencia, donde la sabiduría interior 
+Siento una fuerte corriente de cambio fluyendo a través de tu consulta. El universo
+te está preparando para una nueva fase de tu existencia, donde la sabiduría interior
 será tu guía más confiable.
 
 **✨ Consejo de los Arcanos:**
-Confía en tu intuición durante los próximos días. Las respuestas que buscas ya 
-residen en tu corazón místico. Mantén los ojos abiertos a las sincronicidades: 
+Confía en tu intuición durante los próximos días. Las respuestas que buscas ya
+residen en tu corazón místico. Mantén los ojos abiertos a las sincronicidades:
 números repetidos, encuentros inesperados, sueños reveladores.
 
 **🌙 Reflexión Final:**
-Medita sobre las imágenes de las cartas que han aparecido. Permite que su simbolismo 
+Medita sobre las imágenes de las cartas que han aparecido. Permite que su simbolismo
 ancestral despierte memorias del alma que te guiarán hacia tu verdad más profunda.
 
 *Las cartas nunca mienten, solo hablan en el lenguaje eterno del espíritu.*
 
 🌟 La magia está en ti, siempre ha estado ahí. 🌟
         """
-    
+
     def crear_prompt_tarot(self, pregunta, mazo, tirada, cartas_resultado):
         """
         PROMPT COMPLETAMENTE MEJORADO - Dinámico, estructurado y realista
         Usa toda la información disponible de los modelos para crear interpretaciones precisas
-        
+
         Args:
             pregunta (str): La pregunta del usuario
             mazo (Mazo): Objeto del mazo utilizado
             tirada (Tirada): Objeto de la tirada con toda su información
             cartas_resultado (list): Lista de cartas con sus posiciones
         """
-        
+
         # 1. INFORMACIÓN COMPLETA DE LA TIRADA
         num_cartas = len(cartas_resultado)
         tirada_nombre = tirada.nombre
         tirada_descripcion = tirada.descripcion
         tirada_costo = tirada.costo
-        
+
         # 2. ANÁLISIS DE CONTEXTO DE LA PREGUNTA
         contexto_pregunta = self._analizar_contexto_pregunta(pregunta)
-        
+
         prompt = f"""🔮 SISTEMA DE INTERPRETACIÓN PROFESIONAL DE TAROT 🔮
 
 INSTRUCCIONES FUNDAMENTALES:
@@ -204,7 +204,7 @@ INSTRUCCIONES FUNDAMENTALES:
         for i, carta_info in enumerate(cartas_resultado, 1):
             carta = carta_info['carta']
             orientacion = "INVERTIDA ⥯" if carta_info['es_invertida'] else "DERECHA ⬆"
-            
+
             prompt += f"""
 ┌─ CARTA {i} ─────────────────────────────────────────────┐
 │ 📍 POSICIÓN EN TIRADA: {carta_info['posicion']}
@@ -212,7 +212,7 @@ INSTRUCCIONES FUNDAMENTALES:
 │ 🃏 CARTA REVELADA: {carta['nombre']} ({orientacion})
 │ 🔢 NÚMERO EN MAZO: #{carta.get('numero', 'N/A')}
 │ ⚡ ENERGÍA ACTIVA: {carta_info['significado_usado'][:150]}...
-│ 🧭 CONTEXTO TIRADA: Esta carta responde específicamente a 
+│ 🧭 CONTEXTO TIRADA: Esta carta responde específicamente a
 │     "{carta_info['descripcion_posicion']}" en tu consulta
 └────────────────────────────────────────────────────────┘
 """
@@ -296,7 +296,7 @@ Proporciona predicciones específicas que honren el diseño y propósito de "{ti
         Genera una explicación del significado y propósito de la tirada específica
         """
         descripcion_base = f"La tirada '{tirada.nombre}' está diseñada para {tirada.descripcion.lower()}"
-        
+
         if len(cartas_resultado) == 1:
             return f"{descripcion_base} Esta tirada de una carta proporciona una respuesta directa y enfocada."
         elif len(cartas_resultado) == 3:
@@ -320,7 +320,7 @@ Proporciona predicciones específicas que honren el diseño y propósito de "{ti
         Analiza el contexto de la pregunta para proporcionar instrucciones específicas
         """
         pregunta_lower = pregunta.lower()
-        
+
         # AMOR Y RELACIONES
         if any(word in pregunta_lower for word in ['amor', 'relación', 'pareja', 'ex', 'matrimonio', 'divorcio', 'infidelidad', 'novio', 'novia', 'esposo', 'esposa']):
             return {
@@ -335,7 +335,7 @@ Para consultas de amor:
 - Da fechas aproximadas para cambios importantes en la relación
                 """
             }
-        
+
         # TRABAJO Y CARRERA
         elif any(word in pregunta_lower for word in ['trabajo', 'empleo', 'carrera', 'jefe', 'ascenso', 'despido', 'entrevista', 'proyecto', 'negocio', 'empresa']):
             return {
@@ -350,7 +350,7 @@ Para consultas laborales:
 - Da consejos sobre decisiones profesionales importantes
                 """
             }
-        
+
         # SALUD
         elif any(word in pregunta_lower for word in ['salud', 'enfermedad', 'médico', 'doctor', 'hospital', 'síntomas', 'tratamiento', 'cirugía']):
             return {
@@ -365,7 +365,7 @@ Para consultas de salud:
 - NUNCA diagnostiques condiciones médicas específicas
                 """
             }
-        
+
         # DINERO Y FINANZAS
         elif any(word in pregunta_lower for word in ['dinero', 'finanzas', 'inversión', 'deuda', 'préstamo', 'lotería', 'herencia', 'economía']):
             return {
@@ -380,7 +380,7 @@ Para consultas financieras:
 - Da consejos sobre administración y prudencia económica
                 """
             }
-        
+
         # FAMILIA
         elif any(word in pregunta_lower for word in ['familia', 'madre', 'padre', 'hijo', 'hija', 'hermano', 'hermana', 'abuelo', 'abuela']):
             return {
@@ -395,7 +395,7 @@ Para consultas familiares:
 - Da consejos sobre comunicación y comprensión familiar
                 """
             }
-        
+
         # ESPIRITUALIDAD
         elif any(word in pregunta_lower for word in ['espiritual', 'alma', 'propósito', 'misión', 'karma', 'destino', 'energía']):
             return {
@@ -410,7 +410,7 @@ Para consultas espirituales:
 - Da orientación sobre el camino de auto-realización
                 """
             }
-        
+
         # GENERAL/OTROS
         else:
             return {
@@ -433,7 +433,7 @@ Para consultas generales:
         try:
             test_prompt = "Responde brevemente: 'Conexión exitosa con Gemini 2.0 Flash-Lite para interpretaciones de tarot.'"
             response = self.model.generate_content(test_prompt)
-            
+
             if response.candidates and len(response.candidates) > 0:
                 result = response.candidates[0].content.parts[0].text
                 logger.info(f"✅ Test exitoso: {result}")
@@ -441,7 +441,7 @@ Para consultas generales:
             else:
                 logger.error("❌ Test fallido: Sin candidatos en la respuesta")
                 return False, "Sin respuesta válida"
-                
+
         except Exception as e:
             logger.error(f"❌ Test fallido: {str(e)}")
             return False, str(e)

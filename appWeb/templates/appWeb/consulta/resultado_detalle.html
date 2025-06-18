@@ -1,0 +1,237 @@
+{% extends 'appWeb/base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }} - Tarotnaútica{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Estilos para la página completa de resultado */
+    .carta-individual {
+        transition: all 0.3s ease;
+    }
+
+    .carta-individual:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 25px rgba(139, 92, 246, 0.3);
+    }
+
+    .interpretacion-content {
+        line-height: 1.8;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+
+    .interpretacion-content h1,
+    .interpretacion-content h2,
+    .interpretacion-content h3,
+    .interpretacion-content h4 {
+        color: #e0d4f7;
+        font-weight: 600;
+        margin: 1.5rem 0 1rem 0;
+        font-family: 'Cinzel', serif;
+    }
+
+    .interpretacion-content h1 {
+        font-size: 1.5rem;
+        border-bottom: 2px solid #8b5cf6;
+        padding-bottom: 0.5rem;
+    }
+
+    .interpretacion-content h2 {
+        font-size: 1.3rem;
+        color: #c4b5fd;
+    }
+
+    .interpretacion-content h3 {
+        font-size: 1.2rem;
+        color: #ddd6fe;
+    }
+
+    .interpretacion-content p {
+        margin: 1rem 0;
+        color: #cbd5e1;
+    }
+
+    .interpretacion-content strong {
+        color: #fbbf24;
+        font-weight: 600;
+    }
+
+    .interpretacion-content em {
+        color: #d946ef;
+        font-style: italic;
+    }
+
+    .interpretacion-content ul,
+    .interpretacion-content ol {
+        margin: 1rem 0;
+        padding-left: 1.5rem;
+        color: #cbd5e1;
+    }
+
+    .interpretacion-content li {
+        margin: 0.5rem 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-cosmic-900 via-cosmic-800 to-primary-900/20 py-20">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <div class="w-20 h-20 bg-gradient-to-br from-gold-500 to-primary-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i class="fas fa-eye text-3xl text-white"></i>
+            </div>
+            <h1 class="font-mystical text-4xl font-bold text-cosmic-100 mb-4">
+                Tu Destino Revelado
+            </h1>
+            <p class="text-cosmic-300 max-w-2xl mx-auto">
+                Las energías cósmicas han conspirado para traerte estas revelaciones
+            </p>
+        </div>
+
+        <!-- Tu Pregunta -->
+        <div class="bg-primary-900/20 border border-primary-500/30 rounded-xl p-6 mb-8">
+            <h2 class="font-mystical text-2xl font-semibold text-primary-300 mb-4 flex items-center">
+                <i class="fas fa-question-circle mr-3"></i>
+                Tu Pregunta al Universo
+            </h2>
+            <blockquote class="text-xl text-cosmic-100 italic leading-relaxed">
+                "{{ consulta.pregunta }}"
+            </blockquote>
+            <div class="mt-4 text-sm text-cosmic-400">
+                <i class="fas fa-calendar-alt mr-2"></i>
+                Consultado el {{ consulta.created_at|date:"d/m/Y H:i" }}
+                <span class="mx-2">•</span>
+                <i class="fas fa-cards mr-2"></i>
+                {{ consulta.tirada_nombre }}
+                {% if consulta.mazo_nombre %}
+                <span class="mx-2">•</span>
+                <i class="fas fa-magic mr-2"></i>
+                {{ consulta.mazo_nombre }}
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Cartas Reveladas -->
+        <div class="mb-12">
+            <h2 class="font-mystical text-2xl font-semibold text-cosmic-100 mb-6 flex items-center">
+                <i class="fas fa-cards mr-3 text-gold-400"></i>
+                Cartas Reveladas por el Oráculo
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {% for carta_info in consulta.cartas_resultado %}
+                <div class="carta-individual bg-cosmic-800/80 backdrop-blur-sm rounded-xl border border-cosmic-600 overflow-hidden">
+
+                    <!-- Imagen de la carta -->
+                    <div class="aspect-[2/3] bg-gradient-to-br from-primary-500/10 to-mystic-500/10 relative">
+                        {% if carta_info.carta.imagen %}
+                            <img src="{{ carta_info.carta.imagen }}"
+                                 alt="{{ carta_info.carta.nombre }}"
+                                 class="w-full h-full object-contain {% if carta_info.es_invertida %}transform rotate-180{% endif %}">
+                        {% else %}
+                            <div class="w-full h-full flex items-center justify-center">
+                                <i class="fas fa-magic text-4xl text-primary-400"></i>
+                            </div>
+                        {% endif %}
+
+                        <!-- Indicador de orientación -->
+                        <div class="absolute top-2 right-2">
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs {% if carta_info.es_invertida %}bg-orange-500/20 text-orange-300{% else %}bg-green-500/20 text-green-300{% endif %}">
+                                <i class="fas fa-{% if carta_info.es_invertida %}undo{% else %}arrow-up{% endif %} mr-1"></i>
+                                {% if carta_info.es_invertida %}Invertida{% else %}Derecha{% endif %}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Información de la carta -->
+                    <div class="p-4">
+                        <h3 class="font-mystical font-semibold text-cosmic-100 mb-1">
+                            {{ carta_info.posicion }}
+                        </h3>
+                        <p class="text-primary-400 font-medium mb-2">
+                            {{ carta_info.carta.nombre }}
+                        </p>
+                        <p class="text-cosmic-300 text-sm leading-relaxed">
+                            {{ carta_info.descripcion_posicion }}
+                        </p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Interpretación Completa -->
+        <div class="bg-cosmic-800/50 backdrop-blur-sm rounded-xl border border-cosmic-600 overflow-hidden">
+            <div class="p-6 border-b border-cosmic-700">
+                <h2 class="font-mystical text-2xl font-semibold text-cosmic-100 flex items-center">
+                    <i class="fas fa-crystal-ball mr-3 text-mystic-400"></i>
+                    Interpretación Mística Completa
+                </h2>
+            </div>
+
+            <div class="p-6">
+                <div class="interpretacion-content bg-cosmic-900/50 rounded-lg p-6 border border-cosmic-600"
+                     id="interpretacionCompleta">
+                    <!-- Se llena con JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Acciones -->
+        <div class="mt-12 flex flex-col sm:flex-row gap-4 justify-center">
+            <a href="{% url 'appWeb:mazos_list' %}"
+               class="inline-flex items-center justify-center bg-gradient-to-r from-primary-500 to-mystic-500 hover:from-primary-600 hover:to-mystic-600 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105">
+                <i class="fas fa-magic mr-3"></i>
+                Nueva Consulta
+            </a>
+
+            <a href="{% url 'appWeb:historial_consultas' %}"
+               class="inline-flex items-center justify-center border-2 border-cosmic-500 text-cosmic-300 hover:text-cosmic-100 hover:border-cosmic-400 px-8 py-4 rounded-xl font-semibold transition-all duration-300">
+                <i class="fas fa-history mr-3"></i>
+                Ver Historial Completo
+            </a>
+
+            <a href="{% url 'appWeb:comprar_creditos' %}"
+               class="inline-flex items-center justify-center border-2 border-gold-500 text-gold-400 hover:text-gold-300 hover:border-gold-400 px-8 py-4 rounded-xl font-semibold transition-all duration-300">
+                <i class="fas fa-coins mr-3"></i>
+                Obtener Más Créditos
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Función para procesar markdown (igual que en mazo.html)
+function parseMarkdown(text) {
+    text = text.replace(/^### (.*$)/gm, '<h3>$1</h3>');
+    text = text.replace(/^## (.*$)/gm, '<h2>$1</h2>');
+    text = text.replace(/^# (.*$)/gm, '<h1>$1</h1>');
+    text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    text = text.replace(/\n\n/g, '</p><p>');
+    text = '<p>' + text + '</p>';
+    text = text.replace(/<p><\/p>/g, '');
+    text = text.replace(/<p>\s*<\/p>/g, '');
+    text = text.replace(/^\- (.*$)/gm, '<li>$1</li>');
+    text = text.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+    text = text.replace(/\n/g, '<br>');
+    return text;
+}
+
+// Procesar la interpretación al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    const interpretacionElement = document.getElementById('interpretacionCompleta');
+    const interpretacionTexto = `{{ consulta.interpretacion|escapejs }}`;
+
+    if (interpretacionElement && interpretacionTexto) {
+        interpretacionElement.innerHTML = parseMarkdown(interpretacionTexto);
+    }
+});
+</script>
+{% endblock %}

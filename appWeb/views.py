@@ -145,7 +145,6 @@ def home(request):
 
     return render(request, 'appWeb/home.html', context)
 
-
 def login_view(request):
     """Vista de login"""
     if request.user.is_authenticated:
@@ -1007,3 +1006,31 @@ def procesar_pago(request):
             'success': False,
             'message': 'Error al procesar el pago'
         })
+
+
+
+
+@login_required
+def resultado_consulta_detalle(request):
+    """Página completa para mostrar la última consulta realizada"""
+    api = APIClient(request)
+
+    # Obtener el historial completo
+    historial = api.get('/billing/mi-historial-consultas/')
+
+    if not historial or len(historial) == 0:
+        messages.error(request, 'No tienes consultas realizadas.')
+        return redirect('appWeb:mazos_list')
+
+    # Tomar la primera consulta (la más reciente)
+    consulta_data = historial[0]
+
+    # Procesar fechas
+    consulta_procesada = process_api_dates(consulta_data)
+
+    context = {
+        'consulta': consulta_procesada,
+        'page_title': 'Tu Destino Revelado'
+    }
+
+    return render(request, 'appWeb/consulta/resultado_detalle.html', context)
