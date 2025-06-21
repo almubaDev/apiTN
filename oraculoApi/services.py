@@ -37,7 +37,7 @@ class GeminiService:
                 temperature=0.85,  # Ligeramente más creativo para interpretaciones místicas
                 top_p=0.9,
                 top_k=40,
-                max_output_tokens=1200,  # Aumentado para interpretaciones más completas
+                max_output_tokens=5000,  # Aumentado para interpretaciones más completas
                 response_mime_type="text/plain",
             )
 
