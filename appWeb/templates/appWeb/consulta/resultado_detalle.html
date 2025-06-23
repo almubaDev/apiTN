@@ -72,6 +72,49 @@
     .interpretacion-content li {
         margin: 0.5rem 0;
     }
+
+    /* Estilos para el modal */
+    .modal-cartas {
+        backdrop-filter: blur(8px);
+        transition: all 0.3s ease;
+    }
+
+    .modal-cartas.show {
+        opacity: 1;
+        pointer-events: all;
+    }
+
+    .modal-cartas.hidden {
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    /* Scroll para el modal en móviles */
+    .modal-content-scroll {
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+
+    /* Significado de carta con scroll interno */
+    .significado-carta {
+        max-height: 120px;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(139, 92, 246, 0.5) transparent;
+    }
+
+    .significado-carta::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .significado-carta::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .significado-carta::-webkit-scrollbar-thumb {
+        background: rgba(139, 92, 246, 0.5);
+        border-radius: 2px;
+    }
 </style>
 {% endblock %}
 
@@ -115,55 +158,6 @@
             </div>
         </div>
 
-        <!-- Cartas Reveladas -->
-        <div class="mb-12">
-            <h2 class="font-mystical text-2xl font-semibold text-cosmic-100 mb-6 flex items-center">
-                <i class="fas fa-cards mr-3 text-gold-400"></i>
-                Cartas Reveladas por el Oráculo
-            </h2>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {% for carta_info in consulta.cartas_resultado %}
-                <div class="carta-individual bg-cosmic-800/80 backdrop-blur-sm rounded-xl border border-cosmic-600 overflow-hidden">
-
-                    <!-- Imagen de la carta -->
-                    <div class="aspect-[2/3] bg-gradient-to-br from-primary-500/10 to-mystic-500/10 relative">
-                        {% if carta_info.carta.imagen %}
-                            <img src="{{ carta_info.carta.imagen }}"
-                                 alt="{{ carta_info.carta.nombre }}"
-                                 class="w-full h-full object-contain {% if carta_info.es_invertida %}transform rotate-180{% endif %}">
-                        {% else %}
-                            <div class="w-full h-full flex items-center justify-center">
-                                <i class="fas fa-magic text-4xl text-primary-400"></i>
-                            </div>
-                        {% endif %}
-
-                        <!-- Indicador de orientación -->
-                        <div class="absolute top-2 right-2">
-                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs {% if carta_info.es_invertida %}bg-orange-500/20 text-orange-300{% else %}bg-green-500/20 text-green-300{% endif %}">
-                                <i class="fas fa-{% if carta_info.es_invertida %}undo{% else %}arrow-up{% endif %} mr-1"></i>
-                                {% if carta_info.es_invertida %}Invertida{% else %}Derecha{% endif %}
-                            </span>
-                        </div>
-                    </div>
-
-                    <!-- Información de la carta -->
-                    <div class="p-4">
-                        <h3 class="font-mystical font-semibold text-cosmic-100 mb-1">
-                            {{ carta_info.posicion }}
-                        </h3>
-                        <p class="text-primary-400 font-medium mb-2">
-                            {{ carta_info.carta.nombre }}
-                        </p>
-                        <p class="text-cosmic-300 text-sm leading-relaxed">
-                            {{ carta_info.descripcion_posicion }}
-                        </p>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-
         <!-- Interpretación Completa -->
         <div class="bg-cosmic-800/50 backdrop-blur-sm rounded-xl border border-cosmic-600 overflow-hidden">
             <div class="p-6 border-b border-cosmic-700">
@@ -192,6 +186,13 @@
                 Nueva Consulta
             </a>
 
+            <!-- NUEVO BOTÓN: Ver Cartas de la Tirada -->
+            <button onclick="abrirModalCartas()"
+                    class="inline-flex items-center justify-center border-2 border-gold-500 text-gold-400 hover:text-gold-300 hover:border-gold-400 px-8 py-4 rounded-xl font-semibold transition-all duration-300">
+                <i class="fas fa-cards mr-3"></i>
+                Ver Cartas de la Tirada
+            </button>
+
             <a href="{% url 'appWeb:historial_consultas' %}"
                class="inline-flex items-center justify-center border-2 border-cosmic-500 text-cosmic-300 hover:text-cosmic-100 hover:border-cosmic-400 px-8 py-4 rounded-xl font-semibold transition-all duration-300">
                 <i class="fas fa-history mr-3"></i>
@@ -206,6 +207,93 @@
         </div>
     </div>
 </div>
+
+<!-- Modal: Cartas de la Tirada -->
+<div id="modalCartas" class="modal-cartas fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-cosmic-800 rounded-2xl border border-cosmic-600 max-w-6xl w-full">
+
+        <!-- Header del Modal -->
+        <div class="p-6 border-b border-cosmic-700">
+            <div class="flex items-center justify-between">
+                <h3 class="font-mystical text-2xl font-bold text-cosmic-100">
+                    <i class="fas fa-cards mr-3 text-gold-400"></i>
+                    Cartas Reveladas por el Oráculo
+                </h3>
+                <button onclick="cerrarModalCartas()" class="text-cosmic-400 hover:text-cosmic-200 transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <p class="text-cosmic-300 mt-2">
+                {{ consulta.tirada_nombre }} - {{ consulta.cartas_resultado|length }} carta{{ consulta.cartas_resultado|length|pluralize }}
+            </p>
+        </div>
+
+        <!-- Contenido del Modal -->
+        <div class="modal-content-scroll p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {% for carta_info in consulta.cartas_resultado %}
+                <div class="carta-individual bg-cosmic-800/80 backdrop-blur-sm rounded-xl border border-cosmic-600 overflow-hidden">
+
+                    <!-- Imagen de la carta -->
+                    <div class="aspect-[2/3] bg-gradient-to-br from-primary-500/10 to-mystic-500/10 relative">
+                        {% if carta_info.carta.imagen %}
+                            <img src="{{ carta_info.carta.imagen }}"
+                                 alt="{{ carta_info.carta.nombre }}"
+                                 class="w-full h-full object-contain {% if carta_info.es_invertida %}transform rotate-180{% endif %}">
+                        {% else %}
+                            <div class="w-full h-full flex items-center justify-center">
+                                <i class="fas fa-magic text-4xl text-primary-400"></i>
+                            </div>
+                        {% endif %}
+
+                        <!-- Indicador de orientación -->
+                        <div class="absolute top-2 right-2">
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs {% if carta_info.es_invertida %}bg-orange-500/20 text-orange-300{% else %}bg-green-500/20 text-green-300{% endif %}">
+                                <i class="fas fa-{% if carta_info.es_invertida %}undo{% else %}arrow-up{% endif %} mr-1"></i>
+                                {% if carta_info.es_invertida %}Invertida{% else %}Normal{% endif %}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Información de la carta -->
+                    <div class="p-4">
+                        <h3 class="font-mystical font-semibold text-cosmic-100 mb-1">
+                            {{ carta_info.posicion }}
+                        </h3>
+                        <p class="text-primary-400 font-medium mb-2">
+                            {{ carta_info.carta.nombre }}
+                        </p>
+
+                        <!-- CAMBIO: Mostrar significado de la carta en lugar de descripción de posición -->
+                        <div class="bg-cosmic-700/30 rounded-lg p-3 border border-cosmic-600">
+                            <h4 class="text-cosmic-200 text-xs font-semibold mb-2 flex items-center">
+                                <i class="fas fa-{% if carta_info.es_invertida %}undo{% else %}star{% endif %} mr-1 text-{% if carta_info.es_invertida %}orange-400{% else %}gold-400{% endif %}"></i>
+                                Significado {% if carta_info.es_invertida %}(Invertida){% else %}(Derecha){% endif %}
+                            </h4>
+                            <div class="significado-carta text-cosmic-300 text-xs leading-relaxed">
+                                {% if carta_info.es_invertida %}
+                                    {{ carta_info.carta.significado_invertida|default:"Sin significado invertido disponible" }}
+                                {% else %}
+                                    {{ carta_info.carta.significado_normal }}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Footer del Modal -->
+        <div class="p-6 border-t border-cosmic-700 text-center">
+            <button onclick="cerrarModalCartas()"
+                    class="bg-gradient-to-r from-primary-500 to-mystic-500 hover:from-primary-600 hover:to-mystic-600 text-white px-6 py-3 rounded-lg font-medium transition-all duration-300">
+                <i class="fas fa-check mr-2"></i>Entendido
+            </button>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -288,5 +376,33 @@ window.imprimirRespuestaCompleta = function() {
 window.debugInterpretacionManual = function() {
     return imprimirRespuestaCompleta();
 };
+
+// NUEVAS FUNCIONES: Modal de cartas
+function abrirModalCartas() {
+    const modal = document.getElementById('modalCartas');
+    modal.classList.remove('hidden');
+    modal.classList.add('show');
+    document.body.classList.add('overflow-hidden');
+}
+
+function cerrarModalCartas() {
+    const modal = document.getElementById('modalCartas');
+    modal.classList.add('hidden');
+    modal.classList.remove('show');
+    document.body.classList.remove('overflow-hidden');
+}
+
+// Event listeners para el modal
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        cerrarModalCartas();
+    }
+});
+
+document.getElementById('modalCartas').addEventListener('click', function(e) {
+    if (e.target === this) {
+        cerrarModalCartas();
+    }
+});
 </script>
 {% endblock %}

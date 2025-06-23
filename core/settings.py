@@ -74,6 +74,11 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+
+    # NUEVO: Middleware personalizado para manejar tokens expirados
+    'appWeb.middleware.TokenAuthMiddleware',
+    'appWeb.middleware.APITokenAuthMiddleware',
+
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -299,8 +304,23 @@ LOGGING = {
             'handlers': ['console', 'file'] if IS_PRODUCTION else ['console'],
             'level': 'INFO',
         },
+        'appWeb.middleware': {
+            'handlers': ['console', 'file'] if IS_PRODUCTION else ['console'],
+            'level': 'INFO',
+        },
     },
 }
+
+# ==========================================
+# CONFIGURACIÓN DE SESIONES - MEJORADA
+# ==========================================
+
+# Configuración de sesiones para mejor manejo de tokens
+SESSION_COOKIE_AGE = 86400  # 24 horas
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+SESSION_SAVE_EVERY_REQUEST = True
+
+
 
 # ==========================================
 # DEFAULT AUTO FIELD

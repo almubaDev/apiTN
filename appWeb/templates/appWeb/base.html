@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    
+
     <!-- META TAGS SIMPLES PARA OCULTAR BARRA DEL NAVEGADOR -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#0f172a">
-    
+
     <title>{% block title %}Tarotnaútica{% endblock %}</title>
-    
+
     <!-- Tailwind CSS with Custom Colors -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -21,7 +21,7 @@
                         // Paleta basada en el logo
                         primary: {
                             50: '#f4f3ff',
-                            100: '#ebe9fe', 
+                            100: '#ebe9fe',
                             200: '#d9d6fe',
                             300: '#bfb8fc',
                             400: '#a192f8',
@@ -72,13 +72,13 @@
             }
         }
     </script>
-    
+
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    
+
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+
     <style>
         .font-mystical { font-family: 'Cinzel', serif; }
         .font-body { font-family: 'Inter', sans-serif; }
@@ -185,13 +185,13 @@
             filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
         }
     </style>
-    
+
     {% block extra_css %}{% endblock %}
 </head>
 <body class="bg-cosmic-900 text-cosmic-100 font-body min-h-screen">
     <!-- Navbar -->
     {% include 'appWeb/partials/navbar.html' %}
-    
+
     <!-- Messages -->
     {% if messages %}
         <div class="fixed top-20 right-4 z-50 space-y-2">
@@ -214,7 +214,7 @@
                             <p class="text-sm text-cosmic-100">{{ message }}</p>
                         </div>
                         <div class="ml-auto pl-3">
-                            <button onclick="this.parentElement.parentElement.parentElement.remove()" 
+                            <button onclick="this.parentElement.parentElement.parentElement.remove()"
                                     class="text-cosmic-400 hover:text-cosmic-200 transition-colors">
                                 <i class="fas fa-times text-xs"></i>
                             </button>
@@ -223,7 +223,7 @@
                 </div>
             {% endfor %}
         </div>
-        
+
         <script>
             // Auto-dismiss messages after 5 seconds
             setTimeout(() => {
@@ -235,7 +235,7 @@
             }, 5000);
         </script>
     {% endif %}
-    
+
     <!-- Indicador de Scroll Móvil - CORREGIDO: esquina inferior derecha -->
     <div id="scrollIndicator" class="scroll-indicator hidden">
         <div class="scroll-indicator-container">
@@ -243,12 +243,12 @@
             <div class="scroll-triangle"></div>
         </div>
     </div>
-    
+
     <!-- Main Content -->
     <main class="pt-16">
         {% block content %}{% endblock %}
     </main>
-    
+
     <!-- Scripts -->
     <script>
         // AUTO-SCROLL AL CARGAR PARA OCULTAR BARRA DEL NAVEGADOR
@@ -302,28 +302,28 @@
                 const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
                 const windowHeight = window.innerHeight;
                 const documentHeight = document.documentElement.scrollHeight;
-                
+
                 // Calcular si estamos cerca del final (últimos 100px)
                 const scrollBottom = scrollTop + windowHeight;
                 const isNearBottom = (documentHeight - scrollBottom) <= 100;
-                
+
                 // Calcular si hay contenido suficiente para mostrar el indicador
                 const hasScrollableContent = documentHeight > windowHeight + 200;
-                
+
                 // Detectar si el usuario está scrolleando hacia abajo
                 const isScrollingDown = scrollTop > lastScrollTop;
-                
+
                 // Mostrar indicador si:
                 // 1. Hay contenido suficiente para scroll
                 // 2. No estamos cerca del final
                 // 3. El usuario no está en el top absoluto
                 const shouldShow = hasScrollableContent && !isNearBottom && scrollTop > 50;
-                
+
                 if (shouldShow && !isVisible) {
                     indicator.classList.remove('hidden');
                     indicator.classList.add('visible');
                     isVisible = true;
-                    
+
                     // Agregar efecto pulse al inicio para llamar la atención
                     if (scrollTop < 300) {
                         indicator.classList.add('pulse');
@@ -356,21 +356,21 @@
             // Event listeners
             window.addEventListener('scroll', updateScrollIndicator, { passive: true });
             window.addEventListener('resize', updateScrollIndicator);
-            
+
             // Verificación inicial
             setTimeout(updateScrollIndicator, 500);
-            
+
             // Re-verificar después de que el contenido se haya cargado completamente
             window.addEventListener('load', () => {
                 setTimeout(updateScrollIndicator, 1000);
             });
         }
-        
+
         // Initialize everything on DOM ready
         document.addEventListener('DOMContentLoaded', function() {
             createStars();
             initScrollIndicator();
-            
+
             // AUTO-SCROLL PARA OCULTAR BARRA AL CARGAR
             autoScrollToHideBar();
         });
@@ -384,7 +384,7 @@
         window.showScrollIndicator = function(show = true) {
             const indicator = document.getElementById('scrollIndicator');
             if (!indicator) return;
-            
+
             if (show) {
                 indicator.classList.remove('hidden');
                 indicator.classList.add('visible');
@@ -398,7 +398,7 @@
         window.setScrollIndicatorStyle = function(style = 'triangle') {
             const triangle = document.getElementById('scrollTriangle');
             const icon = document.getElementById('scrollIcon');
-            
+
             if (style === 'triangle' && triangle) {
                 triangle.style.display = 'block';
                 if (icon) icon.style.display = 'none';
@@ -408,7 +408,161 @@
             }
         };
     </script>
-    
+    <script>
+// ============================================
+// MANEJO GLOBAL DE TOKENS EXPIRADOS
+// ============================================
+
+(function() {
+    'use strict';
+
+    // Interceptar todas las llamadas fetch para manejar tokens expirados
+    const originalFetch = window.fetch;
+
+    window.fetch = function(...args) {
+        return originalFetch.apply(this, args)
+            .then(response => {
+                // Si es un error 401, verificar si requiere logout
+                if (response.status === 401) {
+                    // Intentar parsear la respuesta para verificar si requiere logout
+                    response.clone().json().then(data => {
+                        if (data && (data.requires_logout || data.redirect)) {
+                            handleTokenExpiration(data.redirect || '/login/');
+                        }
+                    }).catch(() => {
+                        // Si no se puede parsear JSON, asumir que es expiración de token
+                        handleTokenExpiration('/login/');
+                    });
+                }
+                return response;
+            })
+            .catch(error => {
+                console.error('Error en fetch:', error);
+                throw error;
+            });
+    };
+
+    // Interceptar también jQuery AJAX si está disponible
+    if (typeof $ !== 'undefined' && $.ajaxSetup) {
+        $.ajaxSetup({
+            error: function(xhr, status, error) {
+                if (xhr.status === 401) {
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        if (response && (response.requires_logout || response.redirect)) {
+                            handleTokenExpiration(response.redirect || '/login/');
+                            return;
+                        }
+                    } catch (e) {
+                        // Si no se puede parsear, asumir expiración
+                        handleTokenExpiration('/login/');
+                        return;
+                    }
+                }
+            }
+        });
+    }
+
+    // Función para manejar expiración de token
+    function handleTokenExpiration(redirectUrl) {
+        console.log('Token expirado, redirigiendo...');
+
+        // Mostrar mensaje al usuario
+        showTokenExpiredMessage();
+
+        // Limpiar cualquier dato de sesión local
+        try {
+            localStorage.removeItem('auth_token');
+            sessionStorage.clear();
+        } catch (e) {
+            console.log('No se pudo limpiar storage local');
+        }
+
+        // Redirigir después de un breve delay para que el usuario vea el mensaje
+        setTimeout(() => {
+            const currentPath = window.location.pathname;
+            const redirectTo = redirectUrl + (currentPath !== '/' ? `?next=${encodeURIComponent(currentPath)}` : '');
+            window.location.href = redirectTo;
+        }, 2000);
+    }
+
+    // Mostrar mensaje de token expirado
+    function showTokenExpiredMessage() {
+        // Crear modal/notificación de token expirado
+        const modal = document.createElement('div');
+        modal.id = 'tokenExpiredModal';
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+        modal.innerHTML = `
+            <div class="bg-cosmic-800 rounded-2xl border border-red-500/30 max-w-md w-full">
+                <div class="p-6 text-center">
+                    <div class="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-hourglass-end text-3xl text-red-400"></i>
+                    </div>
+                    <h3 class="font-mystical text-xl font-bold text-cosmic-100 mb-2">
+                        Sesión Expirada
+                    </h3>
+                    <p class="text-cosmic-300 text-sm leading-relaxed mb-4">
+                        Tu sesión ha expirado por seguridad. Serás redirigido al inicio de sesión.
+                    </p>
+                    <div class="flex items-center justify-center">
+                        <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-500"></div>
+                        <span class="ml-2 text-cosmic-400 text-sm">Redirigiendo...</span>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Auto-remover después de 3 segundos
+        setTimeout(() => {
+            if (document.getElementById('tokenExpiredModal')) {
+                document.body.removeChild(modal);
+            }
+        }, 3000);
+    }
+
+    // Verificar periódicamente el estado de la sesión (opcional)
+    function checkSessionStatus() {
+        // Solo verificar si estamos en una página que requiere autenticación
+        const publicPaths = ['/', '/login/', '/register/', '/password-reset/', '/motor-nautica/'];
+        const currentPath = window.location.pathname;
+
+        if (!publicPaths.includes(currentPath) && !currentPath.startsWith('/password-reset/confirm/')) {
+            fetch('/ajax/verificar-creditos/', {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            }).then(response => {
+                if (response.status === 401) {
+                    handleTokenExpiration('/login/');
+                }
+            }).catch(error => {
+                console.log('Error verificando sesión:', error);
+            });
+        }
+    }
+
+    // Verificar sesión cada 30 minutos (opcional, para detectar expiraciones proactivamente)
+    if (window.location.pathname !== '/login/' && window.location.pathname !== '/register/') {
+        setInterval(checkSessionStatus, 30 * 60 * 1000); // 30 minutos
+    }
+
+    // Manejar casos donde el servidor redirige directamente (para requests no-AJAX)
+    window.addEventListener('beforeunload', function() {
+        // Limpiar cualquier modal de token expirado antes de salir
+        const modal = document.getElementById('tokenExpiredModal');
+        if (modal) {
+            document.body.removeChild(modal);
+        }
+    });
+
+    })();
+
+    console.log('✅ Token expiration handler initialized');
+</script>
+
     {% block extra_js %}{% endblock %}
 </body>
 </html>
